@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    @State private var apiKeyInput = ""
+    @State private var tokenInput = ""
     
     var body: some View {
         NavigationView {
@@ -11,7 +11,7 @@ struct SettingsView: View {
                     HStack {
                         Text("API Key")
                         Spacer()
-                        SecureField("sk-...", text: $apiKeyInput)
+                        SecureField("sk-...", text: $tokenInput)
                             .multilineTextAlignment(.trailing)
                             .frame(maxWidth: 200)
                     }
@@ -42,9 +42,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("设置")
-            .onAppear { apiKeyInput = appState.apiKey }
-            .onChange(of: apiKeyInput) { newValue in
-                appState.apiKey = newValue
+            .onAppear { tokenInput = appState.token }
+            .onChange(of: tokenInput) { newValue in
+                appState.token = newValue
             }
         }
     }

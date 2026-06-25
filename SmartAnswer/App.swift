@@ -13,8 +13,8 @@ struct SmartAnswerApp: App {
 }
 
 class AppState: ObservableObject {
-    @Published var apiKey: String = "" {
-        didSet { UserDefaults.standard.set(apiKey, forKey: "apiKey") }
+    @Published var token: String = "" {
+        didSet { UserDefaults.standard.set(token, forKey: "token") }
     }
     @Published var modelName: String = "deepseek-chat" {
         didSet { UserDefaults.standard.set(modelName, forKey: "modelName") }
@@ -26,7 +26,7 @@ class AppState: ObservableObject {
     @Published var searchHistory: [SearchRecord] = []
     
     init() {
-        self.apiKey = UserDefaults.standard.string(forKey: "apiKey") ?? ""
+        self.token = UserDefaults.standard.string(forKey: "token") ?? ""
         self.modelName = UserDefaults.standard.string(forKey: "modelName") ?? "deepseek-chat"
         self.preferLocal = UserDefaults.standard.object(forKey: "preferLocal") as? Bool ?? true
         QuestionBankManager.shared.loadBanks()

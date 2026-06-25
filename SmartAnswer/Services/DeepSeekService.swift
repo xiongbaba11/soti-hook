@@ -5,11 +5,11 @@ class DeepSeekService {
     
     private let url = URL(string: "https://api.deepseek.com/chat/completions")!
     
-    func ask(question: String, apiKey: String, model: String) async throws -> String {
+    func ask(question: String, token: String, model: String) async throws -> String {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 15
         
         let body = DeepSeekRequest(
