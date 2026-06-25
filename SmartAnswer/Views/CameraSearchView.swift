@@ -8,113 +8,135 @@ struct CameraSearchView: View {
     @State private var result: SearchResult?
     @State private var isLoading = false
     @State private var showPhotoPicker = false
-    @State private var capturedImage: UIImage?
+    @State private var showResultSheet = false
+    @State private var cameraReady = false
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                // Camera preview
-                ZStack {
-                    CameraPreviewView(session: camera.session)
-                        .frame(height: 380)
-                        .cornerRadius(20)
-                        .padding(.horizontal, 16)
-                    
-                    // Viewfinder overlay
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.blue.opacity(0.5), lineWidth: 2)
-                        .frame(width: 280, height: 200)
-                }
-                .padding(.top, 8)
+        ZStack {
+            // Full-screen camera background
+            if cameraReady {
+                CameraPreviewView(session: camera.session)
+                    .ignoresSafeArea()
+            } else {
+                Color.black.ignoresSafeArea()
+                ProgressView()
+                    .tint(.white)
+                    .scaleEffect(1.5)
+            }
+            
+            // Viewfinder overlay
+            VStack {
+                Spacer()
                 
-                // Controls
-                HStack(spacing: 40) {
+                // Viewfinder frame
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                    .frame(width: 300, height: 220)
+                    .overlay(
+                        // Corner accents
+                        ZStack {
+                            CornerAccent(position: .topLeading)
+                            CornerAccent(position: .topTrailing)
+                            CornerAccent(position: .bottomLeading)
+                            CornerAccent(position: .bottomTrailing)
+                        }
+                    )
+                
+                Spacer()
+                
+                // Status indicator
+                if isLoading {
+                    HStack(spacing: 10) {
+                        ProgressView()
+                            .tint(.white)
+                        Text("AI 识别中...")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(.ultraThinMaterial)
+                    .cornerRadius(25)
+                    .padding(.bottom, 12)
+                }
+                
+                // Bottom controls
+                HStack(spacing: 50) {
+                    // Album button
                     Button(action: { showPhotoPicker = true }) {
                         Image(systemName: "photo.on.rectangle")
                             .font(.title2)
-                            .foregroundColor(.gray)
-                            .frame(width: 44, height: 44)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(10)
-                    }
-                    
-                    Button(action: takePhoto) {
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 68, height: 68)
-                            .overlay(Circle().stroke(Color.white, lineWidth: 4))
-                            .shadow(color: .blue.opacity(0.3), radius: 8)
-                    }
-                    .disabled(isLoading)
-                    
-                    Color.clear.frame(width: 44, height: 44)
-                }
-                .padding(.vertical, 20)
-                
-                // Result
-                if isLoading {
-                    HStack {
-                        ProgressView()
-                            .tint(.white)
-                        Text("识别中...")
                             .foregroundColor(.white)
+                            .frame(width: 50, height: 50)
+                            .background(.ultraThinMaterial)
+                            .cornerRadius(15)
                     }
-                    .padding(16)
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(16)
-                    .padding(.horizontal, 16)
-                }
-                
-                if let result = result {
-                    switch result {
-                    case .found(let question):
-                        AnswerCard(question: question)
-                            .padding(.horizontal, 16)
-                    case .notFound:
-                        Text("未找到答案")
-                            .foregroundColor(.secondary)
-                            .padding()
-                    case .error(let msg):
-                        Text(msg)
-                            .foregroundColor(.red)
-                            .padding()
+                    
+                    // Shutter button
+                    Button(action: takePhoto) {
+                        ZStack {
+                            Circle()
+                                .stroke(Color.white, lineWidth: 4)
+                                .frame(width: 78, height: 78)
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 64, height: 64)
+                        }
                     }
+                    .disabled(isLoading || !cameraReady)
+                    .scaleEffect(isLoading ? 0.9 : 1.0)
+                    .animation(.easeInOut(duration: 0.2), value: isLoading)
+                    
+                    // Placeholder
+                    Color.clear.frame(width: 50, height: 50)
                 }
-                
-                Spacer()
+                .padding(.bottom, 30)
             }
-            .navigationTitle("拍照搜题")
-            .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showPhotoPicker) {
-                PhotoPicker { image in
-                    if let image = image {
-                        capturedImage = image
-                        Task { await recognizeAndSearch(image: image) }
-                    }
-                }
-            }
-            .onAppear { camera.start() }
-            .onDisappear { camera.stop() }
         }
+        .sheet(isPresented: $showResultSheet) {
+            ResultSheet(result: result, isLoading: isLoading)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showPhotoPicker) {
+            PhotoPicker { image in
+                if let image = image {
+                    Task { await recognizeAndSearch(image: image) }
+                }
+            }
+        }
+        .onAppear {
+            DispatchQueue.global(qos: .userInitiated).async {
+                camera.start()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    cameraReady = true
+                }
+            }
+        }
+        .onDisappear { camera.stop() }
     }
     
     private func takePhoto() {
         camera.capturePhoto { image in
             if let image = image {
-                capturedImage = image
                 Task { await recognizeAndSearch(image: image) }
             }
         }
     }
     
     private func recognizeAndSearch(image: UIImage) async {
-        isLoading = true
-        result = nil
+        await MainActor.run {
+            isLoading = true
+            result = nil
+        }
         
         guard let text = await OCRService.shared.recognizeText(from: image) else {
-            isLoading = false
-            result = .error("无法识别文字")
+            await MainActor.run {
+                isLoading = false
+                result = .error("无法识别文字，请重新拍照")
+                showResultSheet = true
+            }
             return
         }
         
@@ -128,8 +150,8 @@ struct CameraSearchView: View {
         await MainActor.run {
             isLoading = false
             result = searchResult
+            showResultSheet = true
             
-            // Save to history
             if case .found(let q) = searchResult {
                 let record = SearchRecord(question: q.question, answer: q.answer, source: q.source, timestamp: Date())
                 appState.searchHistory.insert(record, at: 0)
@@ -138,6 +160,172 @@ struct CameraSearchView: View {
     }
 }
 
+// MARK: - Result Sheet (iOS 27 Liquid Glass)
+struct ResultSheet: View {
+    let result: SearchResult?
+    let isLoading: Bool
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Handle bar
+            Capsule()
+                .fill(Color.secondary.opacity(0.4))
+                .frame(width: 40, height: 5)
+                .padding(.top, 8)
+            
+            if isLoading {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .scaleEffect(1.3)
+                    Text("AI 正在分析题目...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let result = result {
+                switch result {
+                case .found(let question):
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Source badge
+                            HStack {
+                                Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
+                                    .font(.caption)
+                                Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(question.source == "local" ? Color.green : Color.blue)
+                            .cornerRadius(8)
+                            
+                            // Question
+                            Text("题目")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(question.question)
+                                .font(.subheadline)
+                                .foregroundColor(.primary)
+                                .padding(12)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(12)
+                            
+                            // Answer
+                            Text("答案")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(question.answer)
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(.blue)
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                        .padding(.horizontal, 20)
+                    }
+                    
+                case .notFound:
+                    VStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.largeTitle)
+                            .foregroundColor(.secondary)
+                        Text("未找到匹配答案")
+                            .font(.headline)
+                        Text("试试调整拍照角度或导入更多题库")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    
+                case .error(let msg):
+                    VStack(spacing: 12) {
+                        Image(systemName: "exclamationmark.triangle")
+                            .font(.largeTitle)
+                            .foregroundColor(.orange)
+                        Text(msg)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.largeTitle)
+                        .foregroundColor(.blue)
+                    Text("对准题目拍照")
+                        .font(.headline)
+                    Text("支持选择题、填空题、问答题")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+}
+
+// MARK: - Corner Accent
+struct CornerAccent: View {
+    enum Position { case topLeading, topTrailing, bottomLeading, bottomTrailing }
+    let position: Position
+    
+    var body: some View {
+        let length: CGFloat = 20
+        let lineWidth: CGFloat = 3
+        
+        ZStack {
+            // Horizontal
+            Rectangle()
+                .fill(Color.blue)
+                .frame(width: length, height: lineWidth)
+                .offset(x: horizontalOffset, y: verticalEdge)
+            
+            // Vertical
+            Rectangle()
+                .fill(Color.blue)
+                .frame(width: lineWidth, height: length)
+                .offset(x: verticalEdge, y: horizontalOffset)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+    }
+    
+    private var horizontalOffset: CGFloat {
+        switch position {
+        case .topLeading, .bottomLeading: return length / 2
+        case .topTrailing, .bottomTrailing: return -length / 2
+        }
+    }
+    
+    private var verticalEdge: CGFloat {
+        switch position {
+        case .topLeading, .topTrailing: return 0
+        case .bottomLeading, .bottomTrailing: return 0
+        }
+    }
+    
+    private var alignment: Alignment {
+        switch position {
+        case .topLeading: return .topLeading
+        case .topTrailing: return .topTrailing
+        case .bottomLeading: return .bottomLeading
+        case .bottomTrailing: return .bottomTrailing
+        }
+    }
+}
+
+// MARK: - Camera Preview
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
     
@@ -150,12 +338,15 @@ struct CameraPreviewView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIView, context: Context) {
-        if let layer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
-            layer.frame = uiView.bounds
+        DispatchQueue.main.async {
+            if let layer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
+                layer.frame = uiView.bounds
+            }
         }
     }
 }
 
+// MARK: - Photo Picker
 struct PhotoPicker: UIViewControllerRepresentable {
     let onPick: (UIImage?) -> Void
     

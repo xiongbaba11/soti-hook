@@ -5,20 +5,35 @@ struct QuestionBankView: View {
     @EnvironmentObject var appState: AppState
     @State private var showImporter = false
     @State private var importSuccess: Bool?
+    @State private var showImportResult = false
     
     var body: some View {
         NavigationView {
             List {
-                Section("已导入题库") {
+                // Existing banks
+                Section {
                     if appState.questionBanks.isEmpty {
-                        Text("暂无题库，点击下方导入")
-                            .foregroundColor(.secondary)
+                        VStack(spacing: 12) {
+                            Image(systemName: "books.vertical")
+                                .font(.largeTitle)
+                                .foregroundColor(.secondary)
+                            Text("暂无题库")
+                                .font(.headline)
+                            Text("点击下方导入，或从其他App分享文件到本App")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                        .listRowBackground(Color.clear)
                     }
+                    
                     ForEach(appState.questionBanks) { bank in
-                        HStack {
+                        HStack(spacing: 12) {
                             Text(bankIcon(bank.name))
                                 .font(.title2)
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: 3) {
                                 Text(bank.name)
                                     .font(.subheadline)
                                     .fontWeight(.semibold)
@@ -36,6 +51,7 @@ struct QuestionBankView: View {
                             ))
                             .labelsHidden()
                         }
+                        .padding(.vertical, 4)
                     }
                     .onDelete { indexSet in
                         for index in indexSet {
@@ -43,28 +59,57 @@ struct QuestionBankView: View {
                         }
                         appState.questionBanks = QuestionBankManager.shared.banks
                     }
+                } header: {
+                    Text("已导入题库")
                 }
                 
+                // Import section
                 Section {
-                    Button(action: { showImporter = true }) {
+                    Button(action: {
+                        showImporter = true
+                    }) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                                 .foregroundColor(.blue)
                             Text("导入题库文件")
                                 .foregroundColor(.blue)
+                                .fontWeight(.medium)
                         }
                     }
+                    
+                    // Share import hint
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundColor(.green)
+                            Text("从其他App导入")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
+                        Text("在微信、QQ等App中打开题库文件 → 分享 → 选择「智能答题」")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
                 } header: {
                     Text("导入新题库")
                 } footer: {
-                    Text("支持格式: 文本 (.txt) · JSON (.json)")
+                    Text("支持格式: .txt (题目?答案) · .json")
                 }
                 
+                // Stats
                 Section("题库统计") {
                     HStack {
                         Text("总题目数")
                         Spacer()
                         Text("\(QuestionBankManager.shared.totalQuestions)")
+                            .foregroundColor(.secondary)
+                            .fontWeight(.semibold)
+                    }
+                    HStack {
+                        Text("已启用题库")
+                        Spacer()
+                        Text("\(appState.questionBanks.filter { $0.enabled }.count)")
                             .foregroundColor(.secondary)
                     }
                 }
@@ -72,30 +117,51 @@ struct QuestionBankView: View {
             .navigationTitle("题库管理")
             .fileImporter(
                 isPresented: $showImporter,
-                allowedContentTypes: [.plainText, .json, .data],
+                allowedContentTypes: [
+                    .plainText,
+                    .json,
+                    UTType(filenameExtension: "txt") ?? .plainText,
+                    UTType(filenameExtension: "csv") ?? .plainText
+                ],
                 allowsMultipleSelection: false
             ) { result in
-                if case .success(let urls) = result, let url = urls.first {
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
                     let gotAccess = url.startAccessingSecurityScopedResource()
                     defer { if gotAccess { url.stopAccessingSecurityScopedResource() } }
                     
-                    importSuccess = QuestionBankManager.shared.importBank(from: url)
+                    let success = QuestionBankManager.shared.importBank(from: url)
                     appState.questionBanks = QuestionBankManager.shared.banks
+                    importSuccess = success
+                    showImportResult = true
+                    
+                case .failure(let error):
+                    print("File import error: \(error)")
+                    importSuccess = false
+                    showImportResult = true
                 }
             }
-            .alert(importSuccess == true ? "导入成功" : "导入失败", isPresented: Binding(
-                get: { importSuccess != nil },
-                set: { if !$0 { importSuccess = nil } }
-            )) {
-                Button("确定") { importSuccess = nil }
+            .alert(importSuccess == true ? "✅ 导入成功" : "❌ 导入失败", isPresented: $showImportResult) {
+                Button("确定") {
+                    importSuccess = nil
+                }
+            } message: {
+                if importSuccess == true {
+                    Text("题库已成功导入，可以在「拍照」或「录屏」中使用")
+                } else {
+                    Text("请确保文件格式正确（.txt 或 .json）")
+                }
             }
         }
     }
     
     private func bankIcon(_ name: String) -> String {
         if name.contains("驾") { return "🚗" }
-        if name.contains("学习") { return "📖" }
+        if name.contains("学习") || name.contains("考试") { return "📖" }
         if name.contains("安全") { return "🛡️" }
+        if name.contains("数学") { return "🔢" }
+        if name.contains("英语") || name.contains("English") { return "🔤" }
         return "📝"
     }
 }

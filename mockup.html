@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390, initial-scale=1.0">
+<title>智能答题 App 设计稿</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 30px;
+    flex-wrap: wrap;
+  }
+  .phone {
+    width: 390px;
+    height: 844px;
+    background: #F2F2F7;
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .status-bar {
+    height: 54px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1C1C1E;
+  }
+  .nav-bar {
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 600;
+  }
+  .content { padding: 0 20px; overflow-y: auto; height: calc(100% - 54px - 83px); }
+  .tab-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 83px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 8px;
+    border-top: 0.5px solid #C6C6C8;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: #8E8E93;
+    font-size: 10px;
+  }
+  .tab-item.active { color: #0A84FF; }
+  .tab-icon { font-size: 22px; }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .camera-preview {
+    width: 100%;
+    height: 340px;
+    background: linear-gradient(135deg, #1C1C1E, #2C2C2E);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .camera-preview::after {
+    content: '';
+    position: absolute;
+    inset: 40px;
+    border: 2px solid rgba(10,132,255,0.4);
+    border-radius: 12px;
+  }
+  .camera-preview .icon { font-size: 48px; opacity: 0.3; }
+  .camera-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 20px;
+  }
+  .shutter-btn {
+    width: 68px; height: 68px;
+    border-radius: 50%;
+    background: #0A84FF;
+    border: 4px solid #fff;
+    box-shadow: 0 0 0 2px #0A84FF;
+    cursor: pointer;
+  }
+  .album-btn {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    background: rgba(118,118,128,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .answer-card {
+    background: linear-gradient(135deg, #0A84FF, #5856D6);
+    border-radius: 20px;
+    padding: 16px;
+    color: #fff;
+    margin-top: 14px;
+  }
+  .answer-card .label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+  .answer-card .answer { font-size: 18px; font-weight: 700; margin-top: 6px; }
+  .answer-card .source { font-size: 10px; opacity: 0.6; margin-top: 8px; }
+  .hero-card {
+    border-radius: 20px;
+    padding: 20px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .hero-card h2 { font-size: 20px; margin-bottom: 6px; }
+  .hero-card p { font-size: 13px; opacity: 0.9; line-height: 1.5; }
+  .start-btn {
+    width: 100%;
+    height: 48px;
+    border-radius: 14px;
+    background: #0A84FF;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+  .step {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .step-num {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #0A84FF;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-text { font-size: 13px; color: #3C3C43; line-height: 1.5; }
+  .step-text strong { color: #1C1C1E; }
+  .float-window {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    padding: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    margin-top: 14px;
+  }
+  .float-window .q { font-size: 11px; color: #8E8E93; margin-bottom: 4px; }
+  .float-window .a { font-size: 15px; font-weight: 700; color: #0A84FF; }
+  .float-window .badge {
+    display: inline-block;
+    background: #30D158;
+    color: #fff;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 0.5px solid #E5E5EA;
+  }
+  .setting-row:last-child { border: none; }
+  .setting-label { font-size: 15px; color: #1C1C1E; }
+  .setting-value { font-size: 14px; color: #8E8E93; }
+  .toggle {
+    width: 51px; height: 31px;
+    border-radius: 16px;
+    background: #30D158;
+    position: relative;
+  }
+  .toggle::after {
+    content: '';
+    width: 27px; height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    position: absolute;
+    top: 2px; right: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .section-title {
+    font-size: 12px;
+    color: #8E8E93;
+    text-transform: uppercase;
+    margin: 14px 0 6px;
+    letter-spacing: 0.5px;
+  }
+  .page-label {
+    text-align: center;
+    color: #fff;
+    font-size: 13px;
+    margin-bottom: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* 题库页 */
+  .tiku-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 0.5px solid #E5E5EA;
+  }
+  .tiku-item:last-child { border: none; }
+  .tiku-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  .tiku-info { flex: 1; }
+  .tiku-name { font-size: 15px; font-weight: 600; color: #1C1C1E; }
+  .tiku-meta { font-size: 12px; color: #8E8E93; margin-top: 2px; }
+  .tiku-status {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 500;
+  }
+  .import-btn {
+    width: 100%;
+    height: 48px;
+    border-radius: 14px;
+    background: rgba(118,118,128,0.12);
+    color: #0A84FF;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .search-bar {
+    width: 100%;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(118,118,128,0.08);
+    border: none;
+    padding: 0 12px;
+    font-size: 15px;
+    color: #1C1C1E;
+    margin-bottom: 12px;
+  }
+  .search-bar::placeholder { color: #8E8E93; }
+  .flow-arrow {
+    text-align: center;
+    color: #8E8E93;
+    font-size: 18px;
+    margin: 4px 0;
+  }
+  .flow-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .flow-box .icon { font-size: 20px; }
+  .flow-box .text { font-size: 13px; color: #1C1C1E; flex: 1; }
+  .flow-box .tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 📷 拍照搜题 ========== -->
+<div>
+  <div class="page-label">📷 拍照搜题</div>
+  <div class="phone">
+    <div class="status-bar">9:41</div>
+    <div class="content">
+      <div class="camera-preview"><span class="icon">📷</span></div>
+      <div class="camera-controls">
+        <div class="album-btn">🖼️</div>
+        <div class="shutter-btn"></div>
+        <div style="width:44px"></div>
+      </div>
+      <div class="answer-card">
+        <div class="label">✨ AI 答案</div>
+        <div class="answer">A. 差遣chāiqiǎn</div>
+        <div class="source">📚 题库命中 · DeepSeek 兜底</div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item active"><span class="tab-icon">📷</span><span>拍照</span></div>
+      <div class="tab-item"><span class="tab-icon">🎬</span><span>录屏</span></div>
+      <div class="tab-item"><span class="tab-icon">📚</span><span>题库</span></div>
+      <div class="tab-item"><span class="tab-icon">⚙️</span><span>设置</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 🎬 录屏搜题 ========== -->
+<div>
+  <div class="page-label">🎬 录屏悬浮搜题</div>
+  <div class="phone">
+    <div class="status-bar">9:41</div>
+    <div class="content">
+      <div class="hero-card" style="background:linear-gradient(135deg,#30D158,#0A84FF)">
+        <h2>🎯 智能录屏搜题</h2>
+        <p>开启录屏后切换到答题App<br>悬浮窗自动识别题目并显示答案</p>
+      </div>
+      
+      <div class="section-title">搜索策略</div>
+      <div class="flow-box">
+        <span class="icon">🔍</span>
+        <span class="text">OCR识别题目文字</span>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">
+        <span class="icon">📚</span>
+        <span class="text">本地题库匹配</span>
+        <span class="tag" style="background:#E8F5E9;color:#2E7D32">优先</span>
+      </div>
+      <div class="flow-arrow">↓ 未命中</div>
+      <div class="flow-box">
+        <span class="icon">🤖</span>
+        <span class="text">DeepSeek AI 兜底</span>
+        <span class="tag" style="background:#E3F2FD;color:#1565C0">在线</span>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-box">
+        <span class="icon">💬</span>
+        <span class="text">悬浮窗显示答案</span>
+      </div>
+
+      <button class="start-btn" style="margin-top:14px">▶ 开启录屏搜题</button>
+      
+      <div class="float-window">
+        <div class="q">题目: 选择正确的读音</div>
+        <div class="a">A. 差遣chāiqiǎn</div>
+        <span class="badge">📚 题库</span>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">📷</span><span>拍照</span></div>
+      <div class="tab-item active"><span class="tab-icon">🎬</span><span>录屏</span></div>
+      <div class="tab-item"><span class="tab-icon">📚</span><span>题库</span></div>
+      <div class="tab-item"><span class="tab-icon">⚙️</span><span>设置</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== 📚 题库管理 ========== -->
+<div>
+  <div class="page-label">📚 题库管理</div>
+  <div class="phone">
+    <div class="status-bar">9:41</div>
+    <div class="nav-bar">题库管理</div>
+    <div class="content">
+      <input class="search-bar" placeholder="搜索题库..." readonly>
+      
+      <div class="section-title">已导入题库</div>
+      <div class="card">
+        <div class="tiku-item">
+          <div class="tiku-icon" style="background:#E3F2FD">📖</div>
+          <div class="tiku-info">
+            <div class="tiku-name">学习强国题库</div>
+            <div class="tiku-meta">2,340 题 · 导入于 6/20</div>
+          </div>
+          <span class="tiku-status" style="background:#E8F5E9;color:#2E7D32">已启用</span>
+        </div>
+        <div class="tiku-item">
+          <div class="tiku-icon" style="background:#FFF3E0">📝</div>
+          <div class="tiku-info">
+            <div class="tiku-name">驾照科目一</div>
+            <div class="tiku-meta">1,876 题 · 导入于 6/18</div>
+          </div>
+          <span class="tiku-status" style="background:#E8F5E9;color:#2E7D32">已启用</span>
+        </div>
+        <div class="tiku-item">
+          <div class="tiku-icon" style="background:#F3E5F5">📊</div>
+          <div class="tiku-info">
+            <div class="tiku-name">安全生产知识</div>
+            <div class="tiku-meta">520 题 · 导入于 6/15</div>
+          </div>
+          <span class="tiku-status" style="background:#FFEBEE;color:#C62828">已禁用</span>
+        </div>
+      </div>
+      
+      <div class="section-title">导入新题库</div>
+      <button class="import-btn">📥 导入题库文件</button>
+      <div style="font-size:11px;color:#8E8E93;margin-top:8px;text-align:center">
+        支持格式: Excel (.xls/.xlsx) · 文本 (.txt) · CSV
+      </div>
+      
+      <div class="section-title">题库统计</div>
+      <div class="card">
+        <div class="setting-row">
+          <span class="setting-label">总题目数</span>
+          <span class="setting-value">4,736</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">命中率</span>
+          <span class="setting-value" style="color:#30D158">78%</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">AI兜底次数</span>
+          <span class="setting-value">156</span>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">📷</span><span>拍照</span></div>
+      <div class="tab-item"><span class="tab-icon">🎬</span><span>录屏</span></div>
+      <div class="tab-item active"><span class="tab-icon">📚</span><span>题库</span></div>
+      <div class="tab-item"><span class="tab-icon">⚙️</span><span>设置</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== ⚙️ 设置 ========== -->
+<div>
+  <div class="page-label">⚙️ 设置</div>
+  <div class="phone">
+    <div class="status-bar">9:41</div>
+    <div class="nav-bar">设置</div>
+    <div class="content">
+      <div class="section-title">AI 模型</div>
+      <div class="card">
+        <div class="setting-row">
+          <span class="setting-label">API Key</span>
+          <span class="setting-value">sk-e3f...7dca</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">模型</span>
+          <span class="setting-value">deepseek-chat</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">优先本地题库</span>
+          <div class="toggle"></div>
+        </div>
+      </div>
+      <div class="section-title">悬浮窗</div>
+      <div class="card">
+        <div class="setting-row">
+          <span class="setting-label">窗口大小</span>
+          <span class="setting-value">中</span>
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">透明度</span>
+          <span class="setting-value">80%</span>
+        </div>
+      </div>
+      <div class="section-title">历史</div>
+      <div class="card">
+        <div class="setting-row">
+          <span class="setting-label">搜索历史</span>
+          <span class="setting-value">23条 ›</span>
+        </div>
+      </div>
+    </div>
+    <div class="tab-bar">
+      <div class="tab-item"><span class="tab-icon">📷</span><span>拍照</span></div>
+      <div class="tab-item"><span class="tab-icon">🎬</span><span>录屏</span></div>
+      <div class="tab-item"><span class="tab-icon">📚</span><span>题库</span></div>
+      <div class="tab-item active"><span class="tab-icon">⚙️</span><span>设置</span></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
