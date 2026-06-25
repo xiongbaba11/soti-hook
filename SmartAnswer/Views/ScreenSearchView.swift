@@ -19,7 +19,6 @@ struct ScreenSearchView: View {
                         Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
                             .font(.system(size: 48))
                             .foregroundColor(isRecording ? .red : .blue)
-                            .symbolEffect(.pulse, isActive: isRecording)
                         
                         Text(isRecording ? "录屏搜题中..." : "智能录屏搜题")
                             .font(.title2)
