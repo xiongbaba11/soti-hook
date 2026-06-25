@@ -120,7 +120,7 @@ struct CameraSearchView: View {
         
         let searchResult = await SearchService.shared.search(
             query: text,
-            apiKey: ***,
+            apiKey: appState.apiKey,
             model: appState.modelName,
             preferLocal: appState.preferLocal
         )

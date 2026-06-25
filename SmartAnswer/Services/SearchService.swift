@@ -9,7 +9,7 @@ enum SearchResult {
 class SearchService {
     static let shared = SearchService()
     
-    func search(query: String, apiKey: *** model: String, preferLocal: Bool) async -> SearchResult {
+    func search(query: String apiKey: String model: String, preferLocal: Bool) async -> SearchResult {
         // Step 1: Try local bank
         if preferLocal, let localResult = QuestionBankManager.shared.search(query) {
             return .found(localResult)
@@ -24,7 +24,7 @@ class SearchService {
         }
         
         do {
-            let answer = try await DeepSeekService.shared.ask(question: query, apiKey: apiKey, model: model)
+            let answer = try await DeepSeekService.shared.ask(question: query, apiKey: String model: model)
             if answer.isEmpty {
                 return .notFound
             }

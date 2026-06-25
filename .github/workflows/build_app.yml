@@ -10,22 +10,25 @@ jobs:
       - uses: actions/checkout@v4
       
       - name: Setup Xcode
-        run: |
-          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
       
-      - name: Build with xcodebuild
+      - name: Build
         run: |
           cd SmartAnswer
-          xcodebuild -project SmartAnswer.xcodeproj -scheme SmartAnswer -sdk iphoneos -configuration Release -archivePath $PWD/build/SmartAnswer.xcarchive archive CODE_SIGNING_ALLOWED=NO
+          xcodebuild -project SmartAnswer.xcodeproj -scheme SmartAnswer -sdk iphoneos -configuration Release \
+            -archivePath $PWD/build/SmartAnswer.xcarchive archive \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO \
+            ENABLE_BITCODE=NO
+          
           cd build/SmartAnswer.xcarchive/Products
           mkdir -p Payload
           mv Applications/SmartAnswer.app Payload/
-          zip -r ../../../SmartAnswer.ipa Payload
-          cd ..
+          zip -r SmartAnswer.ipa Payload
+          mv SmartAnswer.ipa ../../../
+          cd ../../../
           ls -la SmartAnswer.ipa
       
-      - name: Upload IPA
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
           name: smartanswer-ipa
           path: SmartAnswer/SmartAnswer.ipa
