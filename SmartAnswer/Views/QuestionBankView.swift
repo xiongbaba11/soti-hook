@@ -26,7 +26,6 @@ struct QuestionBankView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
-                        .listRowBackground(Color.clear)
                     }
                     
                     ForEach(appState.questionBanks) { bank in
@@ -77,7 +76,6 @@ struct QuestionBankView: View {
                         }
                     }
                     
-                    // Share import hint
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Image(systemName: "square.and.arrow.up")
@@ -142,15 +140,19 @@ struct QuestionBankView: View {
                     showImportResult = true
                 }
             }
-            .alert(importSuccess == true ? "✅ 导入成功" : "❌ 导入失败", isPresented: $showImportResult) {
-                Button("确定") {
-                    importSuccess = nil
-                }
-            } message: {
+            .alert(isPresented: $showImportResult) {
                 if importSuccess == true {
-                    Text("题库已成功导入，可以在「拍照」或「录屏」中使用")
+                    return Alert(
+                        title: Text("✅ 导入成功"),
+                        message: Text("题库已成功导入，可以在「拍照」或「录屏」中使用"),
+                        dismissButton: .default(Text("确定")) { importSuccess = nil }
+                    )
                 } else {
-                    Text("请确保文件格式正确（.txt 或 .json）")
+                    return Alert(
+                        title: Text("❌ 导入失败"),
+                        message: Text("请确保文件格式正确（.txt 或 .json）"),
+                        dismissButton: .default(Text("确定")) { importSuccess = nil }
+                    )
                 }
             }
         }

@@ -33,7 +33,6 @@ struct CameraSearchView: View {
                     .stroke(Color.white.opacity(0.6), lineWidth: 2)
                     .frame(width: 300, height: 220)
                     .overlay(
-                        // Corner accents
                         ZStack {
                             CornerAccent(position: .topLeading)
                             CornerAccent(position: .topTrailing)
@@ -56,24 +55,22 @@ struct CameraSearchView: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 12)
-                    .background(.ultraThinMaterial)
+                    .background(Color.black.opacity(0.5))
                     .cornerRadius(25)
                     .padding(.bottom, 12)
                 }
                 
                 // Bottom controls
                 HStack(spacing: 50) {
-                    // Album button
                     Button(action: { showPhotoPicker = true }) {
                         Image(systemName: "photo.on.rectangle")
                             .font(.title2)
                             .foregroundColor(.white)
                             .frame(width: 50, height: 50)
-                            .background(.ultraThinMaterial)
+                            .background(Color.black.opacity(0.4))
                             .cornerRadius(15)
                     }
                     
-                    // Shutter button
                     Button(action: takePhoto) {
                         ZStack {
                             Circle()
@@ -88,7 +85,6 @@ struct CameraSearchView: View {
                     .scaleEffect(isLoading ? 0.9 : 1.0)
                     .animation(.easeInOut(duration: 0.2), value: isLoading)
                     
-                    // Placeholder
                     Color.clear.frame(width: 50, height: 50)
                 }
                 .padding(.bottom, 30)
@@ -96,8 +92,6 @@ struct CameraSearchView: View {
         }
         .sheet(isPresented: $showResultSheet) {
             ResultSheet(result: result, isLoading: isLoading)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showPhotoPicker) {
             PhotoPicker { image in
@@ -160,117 +154,120 @@ struct CameraSearchView: View {
     }
 }
 
-// MARK: - Result Sheet (iOS 27 Liquid Glass)
+// MARK: - Result Sheet (iOS 15 compatible)
 struct ResultSheet: View {
     let result: SearchResult?
     let isLoading: Bool
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Handle bar
-            Capsule()
-                .fill(Color.secondary.opacity(0.4))
-                .frame(width: 40, height: 5)
-                .padding(.top, 8)
-            
-            if isLoading {
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .scaleEffect(1.3)
-                    Text("AI 正在分析题目...")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let result = result {
-                switch result {
-                case .found(let question):
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 12) {
-                            // Source badge
-                            HStack {
-                                Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
+        NavigationView {
+            VStack(spacing: 16) {
+                if isLoading {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(1.3)
+                        Text("AI 正在分析题目...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let result = result {
+                    switch result {
+                    case .found(let question):
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Source badge
+                                HStack {
+                                    Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
+                                        .font(.caption)
+                                    Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
+                                        .font(.caption)
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(question.source == "local" ? Color.green : Color.blue)
+                                .cornerRadius(8)
+                                
+                                Text("题目")
                                     .font(.caption)
-                                Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
+                                    .foregroundColor(.secondary)
+                                Text(question.question)
+                                    .font(.subheadline)
+                                    .foregroundColor(.primary)
+                                    .padding(12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(12)
+                                
+                                Text("答案")
                                     .font(.caption)
-                                    .fontWeight(.medium)
+                                    .foregroundColor(.secondary)
+                                Text(question.answer)
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.blue)
+                                    .padding(16)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color.blue.opacity(0.1))
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                    )
                             }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(question.source == "local" ? Color.green : Color.blue)
-                            .cornerRadius(8)
-                            
-                            // Question
-                            Text("题目")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(question.question)
-                                .font(.subheadline)
-                                .foregroundColor(.primary)
-                                .padding(12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.ultraThinMaterial)
-                                .cornerRadius(12)
-                            
-                            // Answer
-                            Text("答案")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(question.answer)
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(.blue)
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color.blue.opacity(0.1))
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                                )
+                            .padding(.horizontal, 20)
+                            .padding(.top, 16)
                         }
-                        .padding(.horizontal, 20)
+                        
+                    case .notFound:
+                        VStack(spacing: 12) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.largeTitle)
+                                .foregroundColor(.secondary)
+                            Text("未找到匹配答案")
+                                .font(.headline)
+                            Text("试试调整拍照角度或导入更多题库")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        
+                    case .error(let msg):
+                        VStack(spacing: 12) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.largeTitle)
+                                .foregroundColor(.orange)
+                            Text(msg)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding()
                     }
-                    
-                case .notFound:
+                } else {
                     VStack(spacing: 12) {
-                        Image(systemName: "magnifyingglass")
+                        Image(systemName: "camera.viewfinder")
                             .font(.largeTitle)
-                            .foregroundColor(.secondary)
-                        Text("未找到匹配答案")
+                            .foregroundColor(.blue)
+                        Text("对准题目拍照")
                             .font(.headline)
-                        Text("试试调整拍照角度或导入更多题库")
+                        Text("支持选择题、填空题、问答题")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                case .error(let msg):
-                    VStack(spacing: 12) {
-                        Image(systemName: "exclamationmark.triangle")
-                            .font(.largeTitle)
-                            .foregroundColor(.orange)
-                        Text(msg)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding()
                 }
-            } else {
-                VStack(spacing: 12) {
-                    Image(systemName: "camera.viewfinder")
-                        .font(.largeTitle)
-                        .foregroundColor(.blue)
-                    Text("对准题目拍照")
-                        .font(.headline)
-                    Text("支持选择题、填空题、问答题")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+            }
+            .navigationTitle("搜题结果")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("关闭") { dismiss() }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
     }
@@ -286,13 +283,11 @@ struct CornerAccent: View {
         let lineWidth: CGFloat = 3
         
         ZStack {
-            // Horizontal
             Rectangle()
                 .fill(Color.blue)
                 .frame(width: length, height: lineWidth)
                 .offset(x: horizontalOffset, y: verticalEdge)
             
-            // Vertical
             Rectangle()
                 .fill(Color.blue)
                 .frame(width: lineWidth, height: length)
@@ -308,12 +303,7 @@ struct CornerAccent: View {
         }
     }
     
-    private var verticalEdge: CGFloat {
-        switch position {
-        case .topLeading, .topTrailing: return 0
-        case .bottomLeading, .bottomTrailing: return 0
-        }
-    }
+    private var verticalEdge: CGFloat { 0 }
     
     private var alignment: Alignment {
         switch position {

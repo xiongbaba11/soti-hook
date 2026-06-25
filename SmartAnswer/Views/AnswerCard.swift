@@ -33,7 +33,7 @@ struct AnswerCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.ultraThinMaterial)
+        .background(Color(.systemBackground))
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
     }

@@ -7,14 +7,12 @@ struct ScreenSearchView: View {
     @State private var lastResult: Question?
     @State private var statusMessage = ""
     @State private var showStatus = false
-    @State private var showResultSheet = false
-    @State private var result: SearchResult?
     
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Hero card with glass effect
+                    // Hero card
                     VStack(spacing: 12) {
                         Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
                             .font(.system(size: 48))
@@ -24,7 +22,7 @@ struct ScreenSearchView: View {
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text(isRecording ? "切换到答题App，悬浮窗会自动识别题目" : "开启录屏后切换到答题App\n自动识别题目并显示答案")
+                        Text(isRecording ? "切换到答题App，录屏会自动记录" : "开启录屏后切换到答题App\n录屏结束后可查看截图识别")
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
@@ -53,7 +51,7 @@ struct ScreenSearchView: View {
                         FlowArrow()
                         FlowStep(icon: "🤖", text: "DeepSeek AI 兜底", tag: "在线", tagColor: .blue)
                         FlowArrow()
-                        FlowStep(icon: "💬", text: "悬浮窗显示答案", tag: nil, tagColor: .clear)
+                        FlowStep(icon: "💬", text: "显示答案", tag: nil, tagColor: .clear)
                     }
                     .padding(.horizontal, 16)
                     
@@ -62,7 +60,7 @@ struct ScreenSearchView: View {
                         HStack {
                             Image(systemName: isRecording ? "stop.circle.fill" : "play.circle.fill")
                                 .font(.title3)
-                            Text(isRecording ? "停止录屏搜题" : "开启录屏搜题")
+                            Text(isRecording ? "停止录屏" : "开启录屏搜题")
                                 .fontWeight(.semibold)
                         }
                         .foregroundColor(.white)
@@ -77,17 +75,16 @@ struct ScreenSearchView: View {
                     // Status message
                     if showStatus && !statusMessage.isEmpty {
                         HStack {
-                            Image(systemName: statusMessage.contains("失败") || statusMessage.contains("错误") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                                .foregroundColor(statusMessage.contains("失败") || statusMessage.contains("错误") ? .orange : .green)
+                            Image(systemName: statusMessage.contains("失败") || statusMessage.contains("错误") || statusMessage.contains("不可用") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                                .foregroundColor(statusMessage.contains("失败") || statusMessage.contains("错误") || statusMessage.contains("不可用") ? .orange : .green)
                             Text(statusMessage)
                                 .font(.subheadline)
                         }
                         .padding(12)
                         .frame(maxWidth: .infinity)
-                        .background(.ultraThinMaterial)
+                        .background(Color(.systemGray6))
                         .cornerRadius(12)
                         .padding(.horizontal, 16)
-                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
                     
                     // Last result
@@ -125,7 +122,7 @@ struct ScreenSearchView: View {
                                         .foregroundColor(.secondary)
                                 }
                                 .padding(12)
-                                .background(.ultraThinMaterial)
+                                .background(Color(.systemGray6))
                                 .cornerRadius(12)
                                 .padding(.horizontal, 16)
                             }
@@ -136,11 +133,6 @@ struct ScreenSearchView: View {
             }
             .navigationTitle("录屏搜题")
             .navigationBarTitleDisplayMode(.inline)
-        }
-        .sheet(isPresented: $showResultSheet) {
-            ResultSheet(result: result, isLoading: false)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
         }
     }
     
@@ -186,7 +178,6 @@ struct ScreenSearchView: View {
                 
                 if let previewVC = previewVC {
                     previewVC.previewControllerDelegate = ScreenPreviewDelegate.shared
-                    // Present preview to save/share recording
                     if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                        let rootVC = windowScene.windows.first?.rootViewController {
                         rootVC.present(previewVC, animated: true)
@@ -214,13 +205,9 @@ class ScreenPreviewDelegate: NSObject, RPPreviewViewControllerDelegate {
     func previewControllerDidFinish(_ previewController: RPPreviewViewController) {
         previewController.dismiss(animated: true)
     }
-    
-    func previewController(_ previewController: RPPreviewViewController, didFinishWithActivityTypes activityTypes: Set<String>) {
-        previewController.dismiss(animated: true)
-    }
 }
 
-// MARK: - Flow Components (iOS 27 style)
+// MARK: - Flow Components
 struct FlowStep: View {
     let icon: String
     let text: String
@@ -247,7 +234,7 @@ struct FlowStep: View {
             }
         }
         .padding(14)
-        .background(.ultraThinMaterial)
+        .background(Color(.systemBackground))
         .cornerRadius(14)
         .shadow(color: .black.opacity(0.04), radius: 2, y: 1)
     }
