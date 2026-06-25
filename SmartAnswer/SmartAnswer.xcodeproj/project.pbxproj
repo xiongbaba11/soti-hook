@@ -1,0 +1,337 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C16C8C81608E4BB7825238A3 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9254698569D84EC9AC71C872 /* App.swift */; };
+		21087E32AC52459C8555C125 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 649D12BADDCB4ECB80C3BD30 /* ContentView.swift */; };
+		CA69F0AA88D241F9BBF0D88D /* CameraSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FC90BA907A64FB19AE97CDB /* CameraSearchView.swift */; };
+		0A39AB041662402CAEFEE8D9 /* ScreenSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD6501B492CF4751A6BA8C70 /* ScreenSearchView.swift */; };
+		20B30C15E8A94741AC802C9D /* QuestionBankView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 283D46B84DCD4A2E90FAB990 /* QuestionBankView.swift */; };
+		C9DC777BF8384C75ACFA3A12 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D33D7172BB1A44448F41D297 /* SettingsView.swift */; };
+		36CC6BA170A94FE9A4876A29 /* AnswerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9851A741F4684EA78C1EF138 /* AnswerCard.swift */; };
+		A18F5DD61C994A5B92F844D6 /* DeepSeekService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C8AB1FDBFCB48988CC5A007 /* DeepSeekService.swift */; };
+		85B2BC95303E4D85BAABF69F /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE57CF898A5149DB93DAD7E0 /* OCRService.swift */; };
+		8DB45E8D1AF44D51A050DE5E /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11DFF0F92C04439788FB5D8F /* CameraService.swift */; };
+		414AE791B61146BF8B9DD6B7 /* QuestionBankManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E761DAE45144DC1A287C7F3 /* QuestionBankManager.swift */; };
+		6B2FBE8331A040888BF08C64 /* SearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7969035E571E48B0B52CDA45 /* SearchService.swift */; };
+		223C8746395C4780B3981866 /* Question.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5E4ABA86D3B4B109798705E /* Question.swift */; };
+		5238FAB900104E70BD23FD38 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFFFE09815BB4BD387C3D673 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		9254698569D84EC9AC71C872 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
+		649D12BADDCB4ECB80C3BD30 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		7FC90BA907A64FB19AE97CDB /* CameraSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraSearchView.swift; sourceTree = "<group>"; };
+		FD6501B492CF4751A6BA8C70 /* ScreenSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenSearchView.swift; sourceTree = "<group>"; };
+		283D46B84DCD4A2E90FAB990 /* QuestionBankView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionBankView.swift; sourceTree = "<group>"; };
+		D33D7172BB1A44448F41D297 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		9851A741F4684EA78C1EF138 /* AnswerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerCard.swift; sourceTree = "<group>"; };
+		8C8AB1FDBFCB48988CC5A007 /* DeepSeekService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekService.swift; sourceTree = "<group>"; };
+		FE57CF898A5149DB93DAD7E0 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
+		11DFF0F92C04439788FB5D8F /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
+		6E761DAE45144DC1A287C7F3 /* QuestionBankManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionBankManager.swift; sourceTree = "<group>"; };
+		7969035E571E48B0B52CDA45 /* SearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchService.swift; sourceTree = "<group>"; };
+		E5E4ABA86D3B4B109798705E /* Question.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Question.swift; sourceTree = "<group>"; };
+		2A802A25E65745D4802198F6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		EFFFE09815BB4BD387C3D673 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2A332FD69C67408BBBD06B33 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		69E751360CD2427FB6551F3B /* SmartAnswer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SmartAnswer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1CFB310B1F1C4ABB80739141 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AD3105BA5E3942D48F5E9F15 /* SmartAnswer */ = {
+			isa = PBXGroup;
+			children = (
+				2A3CEB5122EF45B9AC6C750A /* Views */,
+				D285D915B8134801B9714B40 /* Services */,
+				3F93EFD7431744179990F363 /* Models */,
+				2E5594C0CCF9489A8C53D4F7 /* Resources */,
+				AEB031A713E74AFBB7152E57 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		2A3CEB5122EF45B9AC6C750A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				649D12BADDCB4ECB80C3BD30 /* ContentView.swift */,
+				7FC90BA907A64FB19AE97CDB /* CameraSearchView.swift */,
+				FD6501B492CF4751A6BA8C70 /* ScreenSearchView.swift */,
+				283D46B84DCD4A2E90FAB990 /* QuestionBankView.swift */,
+				D33D7172BB1A44448F41D297 /* SettingsView.swift */,
+				9851A741F4684EA78C1EF138 /* AnswerCard.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D285D915B8134801B9714B40 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				8C8AB1FDBFCB48988CC5A007 /* DeepSeekService.swift */,
+				FE57CF898A5149DB93DAD7E0 /* OCRService.swift */,
+				11DFF0F92C04439788FB5D8F /* CameraService.swift */,
+				6E761DAE45144DC1A287C7F3 /* QuestionBankManager.swift */,
+				7969035E571E48B0B52CDA45 /* SearchService.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		3F93EFD7431744179990F363 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				E5E4ABA86D3B4B109798705E /* Question.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		2E5594C0CCF9489A8C53D4F7 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				9254698569D84EC9AC71C872 /* App.swift */,
+				2A802A25E65745D4802198F6 /* Info.plist */,
+				EFFFE09815BB4BD387C3D673 /* Assets.xcassets */,
+				2A332FD69C67408BBBD06B33 /* LaunchScreen.storyboard */,
+			);
+			sourceTree = "<group>";
+		};
+		AEB031A713E74AFBB7152E57 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				69E751360CD2427FB6551F3B /* SmartAnswer.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		71DA7D6B2CA64B93A3C876A1 /* SmartAnswer */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 992941834FEE4719AF9D7195 /* Build configuration list for PBXNativeTarget "SmartAnswer" */;
+			buildPhases = (
+				B05BC910F12B43C09BD7E578 /* Sources */,
+				1CFB310B1F1C4ABB80739141 /* Frameworks */,
+				7915B70F48D64B8299BB8A81 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SmartAnswer;
+			productName = SmartAnswer;
+			productReference = 69E751360CD2427FB6551F3B /* SmartAnswer.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D5FFE7860DC645339ECFA859 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 64FDD613C5F74F6DB5BB3B67 /* Build configuration list for PBXProject "SmartAnswer" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = "zh-Hans";
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				"zh-Hans",
+				Base,
+			);
+			mainGroup = AD3105BA5E3942D48F5E9F15;
+			productRefGroup = AEB031A713E74AFBB7152E57 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				71DA7D6B2CA64B93A3C876A1 /* SmartAnswer */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7915B70F48D64B8299BB8A81 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5238FAB900104E70BD23FD38 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		B05BC910F12B43C09BD7E578 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C16C8C81608E4BB7825238A3 /* App.swift in Sources */,
+				21087E32AC52459C8555C125 /* ContentView.swift in Sources */,
+				CA69F0AA88D241F9BBF0D88D /* CameraSearchView.swift in Sources */,
+				0A39AB041662402CAEFEE8D9 /* ScreenSearchView.swift in Sources */,
+				20B30C15E8A94741AC802C9D /* QuestionBankView.swift in Sources */,
+				C9DC777BF8384C75ACFA3A12 /* SettingsView.swift in Sources */,
+				36CC6BA170A94FE9A4876A29 /* AnswerCard.swift in Sources */,
+				A18F5DD61C994A5B92F844D6 /* DeepSeekService.swift in Sources */,
+				85B2BC95303E4D85BAABF69F /* OCRService.swift in Sources */,
+				8DB45E8D1AF44D51A050DE5E /* CameraService.swift in Sources */,
+				414AE791B61146BF8B9DD6B7 /* QuestionBankManager.swift in Sources */,
+				6B2FBE8331A040888BF08C64 /* SearchService.swift in Sources */,
+				223C8746395C4780B3981866 /* Question.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		8030ADCBE5D343EC92085E9B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		5EB0E640E4884709ACB6EBEE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AE94B447D2C044DBBD4C2439 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SmartAnswer/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "智能答题";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smartanswer.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		02644FB3B2C3439EA118E490 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SmartAnswer/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "智能答题";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.smartanswer.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		64FDD613C5F74F6DB5BB3B67 /* Build configuration list for PBXProject "SmartAnswer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8030ADCBE5D343EC92085E9B /* Debug */,
+				5EB0E640E4884709ACB6EBEE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		992941834FEE4719AF9D7195 /* Build configuration list for PBXNativeTarget "SmartAnswer" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AE94B447D2C044DBBD4C2439 /* Debug */,
+				02644FB3B2C3439EA118E490 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D5FFE7860DC645339ECFA859 /* Project object */;
+}

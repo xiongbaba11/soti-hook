@@ -1,0 +1,31 @@
+name: Build SmartAnswer IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+      
+      - name: Build with xcodebuild
+        run: |
+          cd SmartAnswer
+          xcodebuild -project SmartAnswer.xcodeproj -scheme SmartAnswer -sdk iphoneos -configuration Release -archivePath $PWD/build/SmartAnswer.xcarchive archive CODE_SIGNING_ALLOWED=NO
+          cd build/SmartAnswer.xcarchive/Products
+          mkdir -p Payload
+          mv Applications/SmartAnswer.app Payload/
+          zip -r ../../../SmartAnswer.ipa Payload
+          cd ..
+          ls -la SmartAnswer.ipa
+      
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartanswer-ipa
+          path: SmartAnswer/SmartAnswer.ipa

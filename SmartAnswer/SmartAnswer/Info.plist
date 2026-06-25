@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>zh_CN</string>
+    <key>CFBundleDisplayName</key>
+    <string>智能答题</string>
+    <key>CFBundleExecutable</key>
+    <string>SmartAnswer</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.smartanswer.app</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>SmartAnswer</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>NSCameraUsageDescription</key>
+    <string>用于拍照搜题识别题目</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>用于选择题目图片进行识别</string>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>arm64</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+</dict>
+</plist>
