@@ -35,7 +35,7 @@ class SearchService {
             if let localResult = QuestionBankManager.shared.search(query) {
                 return .found(localResult)
             }
-            return .error("API调用失败: \error.localizedDescription)")
+            return .error("API调用失败: \(error.localizedDescription)")
         }
     }
 }
