@@ -1,0 +1,5 @@
+*.dylib
+*.ipa
+*.xz
+FridaGadget*
+sotihook_output*

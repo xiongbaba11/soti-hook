@@ -1,0 +1,148 @@
+name: Compile SotiHook
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: |
+          cat > sotihook.m << 'EOF'
+          #import <Foundation/Foundation.h>
+          #import <objc/runtime.h>
+          
+          static NSString *kAPIKey = @"YOUR_API_KEY_HERE";
+          static NSString *kURL = @"https://api.deepseek.com/chat/completions";
+          
+          static id (*fnLCS)(id,SEL,id,id,id) = NULL;
+          static id (*fnNet)(id,SEL,id,id) = NULL;
+          
+          static BOOL hasRes(id r) {
+              if(!r) return NO;
+              if([r isKindOfClass:[NSArray class]]) return [(NSArray*)r count]>0;
+              if([r isKindOfClass:[NSDictionary class]]) return [(NSDictionary*)r count]>0;
+              if([r isKindOfClass:[NSString class]]) return [(NSString*)r length]>0;
+              return YES;
+          }
+          
+          static NSString* deepseek(NSString *q) {
+              NSMutableURLRequest *req = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:kURL]];
+              [req setHTTPMethod:@"POST"];
+              [req setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+              [req setValue:[@"Bearer " stringByAppendingString:kAPIKey] forHTTPHeaderField:@"Authorization"];
+              [req setTimeoutInterval:12];
+              
+              NSString *esc = [[q stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""]
+                               stringByReplacingOccurrencesOfString:@"\n" withString:@"\\n"];
+              NSString *body = [NSString stringWithFormat:
+                  @"{\"model\":\"deepseek-chat\",\"messages\":["
+                  "{\"role\":\"system\",\"content\":\"答题助手，直接给答案。选择题只给字母。\"},"
+                  "{\"role\":\"user\",\"content\":\"%@\"}],"
+                  "\"max_tokens\":512,\"temperature\":0.1}", esc];
+              [req setHTTPBody:[body dataUsingEncoding:NSUTF8StringEncoding]];
+              
+              __block NSString *ans = nil;
+              dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+              [[[NSURLSession sharedSession] dataTaskWithRequest:req completionHandler:^(NSData *d,NSURLResponse *r,NSError *e){
+                  if(!e && d) {
+                      NSString *j = [[NSString alloc] initWithData:d encoding:NSUTF8StringEncoding];
+                      NSRange R = [j rangeOfString:@"\"content\":\""];
+                      if(R.location != NSNotFound) {
+                          R.location += 11;
+                          NSMutableString *m = [NSMutableString string];
+                          BOOL esc = NO;
+                          for(NSUInteger i=R.location;i<j.length;i++) {
+                              unichar c = [j characterAtIndex:i];
+                              if(esc) { if(c=='n')[m appendString:@"\n"]; else if(c=='"')[m appendString:@"\""]; else if(c=='\\')[m appendString:@"\\"]; esc=NO; }
+                              else if(c=='\\') esc=YES;
+                              else if(c=='"') break;
+                              else [m appendFormat:@"%C",c];
+                          }
+                          ans = m;
+                      }
+                  }
+                  dispatch_semaphore_signal(sem);
+              }] resume];
+              dispatch_semaphore_wait(sem, dispatch_time(DISPATCH_TIME_NOW,12*NSEC_PER_SEC));
+              return ans;
+          }
+          
+          static id hookLCS(id self, SEL _cmd, id q, id topN, id cb) {
+              NSLog(@"[SotiHook] searchTimuWithLCS: %@", q);
+              id res = fnLCS(self, _cmd, q, topN, cb);
+              if(hasRes(res)) { NSLog(@"[SotiHook] 题库命中"); }
+              else {
+                  NSLog(@"[SotiHook] 题库未命中→DeepSeek");
+                  NSString *qs = [q isKindOfClass:[NSString class]]?q:nil;
+                  if(qs) dispatch_async(dispatch_get_global_queue(0,0),^{
+                      NSString *a = deepseek(qs);
+                      if(a.length) {
+                          NSLog(@"[SotiHook] 答案: %@", a);
+                          if(cb) { void(^b)(id)=cb; b(@[@{@"answer":a,@"q":qs,@"source":@"deepseek"}]); }
+                      }
+                  });
+              }
+              return res;
+          }
+          
+          static id hookNet(id self, SEL _cmd, id q, id cb) {
+              NSLog(@"[SotiHook] searchNetTikus: %@", q);
+              id res = fnNet(self, _cmd, q, cb);
+              if(hasRes(res)) { NSLog(@"[SotiHook] 在线命中"); }
+              else {
+                  NSLog(@"[SotiHook] 在线未命中→DeepSeek");
+                  NSString *qs = [q isKindOfClass:[NSString class]]?q:nil;
+                  if(qs) dispatch_async(dispatch_get_global_queue(0,0),^{
+                      NSString *a = deepseek(qs);
+                      if(a.length) {
+                          NSLog(@"[SotiHook] 答案: %@", a);
+                          if(cb) { void(^b)(id)=cb; b(@[@{@"answer":a,@"q":qs,@"source":@"deepseek"}]); }
+                      }
+                  });
+              }
+              return res;
+          }
+          
+          __attribute__((constructor))
+          static void init() {
+              NSLog(@"[SotiHook] v3 加载!");
+              unsigned int cnt=0;
+              Class *cls = objc_copyClassList(&cnt);
+              for(unsigned int i=0;i<cnt;i++) {
+                  const char *n = class_getName(cls[i]);
+                  if(!strstr(n,"Search")&&!strstr(n,"Tiku")&&!strstr(n,"Recognize")&&!strstr(n,"soti")&&!strstr(n,"Camera")) continue;
+                  unsigned int mc=0;
+                  Method *ms = class_copyMethodList(cls[i],&mc);
+                  if(!ms) continue;
+                  for(unsigned int j=0;j<mc;j++) {
+                      const char *sn = sel_getName(method_getName(ms[j]));
+                      if(strstr(sn,"searchTimuWithLCS")&&!fnLCS) {
+                          fnLCS=(void*)method_getImplementation(ms[j]);
+                          method_setImplementation(ms[j],(IMP)hookLCS);
+                          NSLog(@"[SotiHook] ✓ %s.%s",n,sn);
+                      }
+                      if(strstr(sn,"searchNetTikus")&&!fnNet) {
+                          fnNet=(void*)method_getImplementation(ms[j]);
+                          method_setImplementation(ms[j],(IMP)hookNet);
+                          NSLog(@"[SotiHook] ✓ %s.%s",n,sn);
+                      }
+                  }
+                  free(ms);
+              }
+              free(cls);
+              if(!fnLCS&&!fnNet) NSLog(@"[SotiHook] ⚠ 未找到目标方法!");
+          }
+          EOF
+          
+          xcrun -sdk iphoneos clang -arch arm64 -dynamiclib -framework Foundation \
+            -fobjc-arc -O2 -install_name @rpath/sotihook.dylib \
+            -o sotihook.dylib sotihook.m
+          file sotihook.dylib
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sotihook
+          path: sotihook.dylib
