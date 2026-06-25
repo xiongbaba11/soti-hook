@@ -1,0 +1,32 @@
+name: Compile Minimal Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build minimal dylib
+        run: |
+          cat > test_minimal.m << 'EOF'
+          #import <Foundation/Foundation.h>
+          
+          __attribute__((constructor))
+          static void init() {
+              NSLog(@"[TestDylib] 最小化dylib加载成功!");
+          }
+          EOF
+          
+          xcrun -sdk iphoneos clang -arch arm64 -dynamiclib -framework Foundation \
+            -fobjc-arc -O2 -mios-version-min=15.0 \
+            -install_name @rpath/sotihook.dylib \
+            -o sotihook.dylib test_minimal.m
+          
+          file sotihook.dylib
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sotihook
+          path: sotihook.dylib
