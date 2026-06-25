@@ -1,6 +1,6 @@
 import Foundation
-import Vision
 import UIKit
+import Vision
 
 class OCRService {
     static let shared = OCRService()
@@ -10,14 +10,16 @@ class OCRService {
         
         return await withCheckedContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
-                guard let observations = request.results as? [VNRecognizeTextObservation],
-                      error == nil else {
+                guard error == nil else {
                     continuation.resume(returning: nil)
                     return
                 }
                 
-                let text = observations.compactMap { $0.topCandidates(1).first?.string }
-                    .joined(separator: "\n")
+                let observations = (request.results as? [Any]) ?? []
+                let text = observations.compactMap { obs -> String? in
+                    guard let obs = obs as? VNRecognizedTextObservation else { return nil }
+                    return obs.topCandidates(1).first?.string
+                }.joined(separator: "\n")
                 
                 continuation.resume(returning: text.isEmpty ? nil : text)
             }
