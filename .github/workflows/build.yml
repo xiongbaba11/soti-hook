@@ -138,7 +138,8 @@ jobs:
           EOF
           
           xcrun -sdk iphoneos clang -arch arm64 -dynamiclib -framework Foundation \
-            -fobjc-arc -O2 -install_name @rpath/sotihook.dylib \
+            -fobjc-arc -O2 -mios-version-min=15.0 \
+            -install_name @rpath/sotihook.dylib \
             -o sotihook.dylib sotihook.m
           file sotihook.dylib
       
