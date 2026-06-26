@@ -224,7 +224,7 @@ class QuestionBankManager {
     
     /// Load bundled example question bank from app bundle
     func loadBundledBank() {
-        guard let url = Bundle.main.url(forResource: "小包电钳工", withExtension: "txt") else {
+        guard let url = Bundle.main.url(forResource: "xiaobao", withExtension: "txt") else {
             print("Bundled bank not found")
             return
         }
@@ -235,14 +235,14 @@ class QuestionBankManager {
         let bank = QuestionBank(
             id: UUID(),
             name: "电钳工题库（示例）",
-            fileName: "小包电钳工.txt",
+            fileName: "xiaobao.txt",
             questionCount: qs.count,
             enabled: true,
             importDate: Date()
         )
         
         banks.append(bank)
-        questions["小包电钳工.txt"] = qs
+        questions["xiaobao.txt"] = qs
         saveBanks()
         saveQuestions(for: bank)
     }
