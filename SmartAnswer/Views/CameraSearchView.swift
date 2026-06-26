@@ -5,21 +5,33 @@ import PhotosUI
 struct CameraSearchView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var camera = CameraService()
-    @State private var result: SearchResult?
     @State private var isLoading = false
     @State private var showPhotoPicker = false
     @State private var cameraReady = false
     @State private var recognizedQuestions: [Question] = []
     @State private var currentIndex = 0
     @State private var scale: CGFloat = 1.0
+    @State private var autoRecognize = true
+    @State private var lastRecognizeTime: Date = Date.distantPast
+    @State private var isStable = false
+    @State private var stabilityTimer: Timer?
+    
+    private let recognizeInterval: TimeInterval = 2.0 // Auto-recognize every 2s when stable
     
     var body: some View {
         VStack(spacing: 0) {
             // Camera area (top half)
             ZStack {
                 if cameraReady {
-                    ScalableCameraPreview(session: camera.session, scale: $scale)
-                        .clipped()
+                    AutoCapturePreview(
+                        session: camera.session,
+                        scale: $scale,
+                        autoRecognize: $autoRecognize,
+                        onCapture: { image in
+                            Task { await recognizeAndSearch(image: image) }
+                        }
+                    )
+                    .clipped()
                 } else {
                     Color.black
                     ProgressView()
@@ -27,20 +39,21 @@ struct CameraSearchView: View {
                         .scaleEffect(1.2)
                 }
                 
-                // Viewfinder frame
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.blue.opacity(0.6), lineWidth: 2)
-                    .frame(width: 260, height: 180)
-                    .allowsHitTesting(false)
+                // Full-width blue frame
+                Rectangle()
+                    .stroke(Color.blue.opacity(0.7), lineWidth: 2.5)
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 12)
+                    .frame(height: 200)
                 
                 // Hint at bottom
                 VStack {
                     Spacer()
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(Color.green)
+                            .fill(autoRecognize ? Color.green : Color.gray)
                             .frame(width: 6, height: 6)
-                        Text("移动镜头，画面稳定后自动识别")
+                        Text(autoRecognize ? "自动识别中..." : "点击快门手动识别")
                             .font(.caption)
                             .foregroundColor(.white)
                     }
@@ -94,10 +107,8 @@ struct CameraSearchView: View {
                 .padding(.bottom, 8)
                 
                 if recognizedQuestions.isEmpty {
-                    // Waiting state
                     VStack(spacing: 12) {
                         Spacer()
-                        // Corner brackets icon
                         ZStack {
                             CornerBracketView()
                                 .frame(width: 60, height: 60)
@@ -108,7 +119,6 @@ struct CameraSearchView: View {
                         
                         Text("等待识别题目")
                             .font(.headline)
-                            .foregroundColor(.primary)
                         Text("把题干和选项完整放入上方画面，移动后保持稳定。")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -117,12 +127,10 @@ struct CameraSearchView: View {
                     }
                     .frame(maxWidth: .infinity)
                 } else {
-                    // Swipeable result cards
                     TabView(selection: $currentIndex) {
                         ForEach(Array(recognizedQuestions.enumerated()), id: \.offset) { index, question in
                             ScrollView {
                                 VStack(alignment: .leading, spacing: 10) {
-                                    // Source badge
                                     HStack {
                                         Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
                                             .font(.caption2)
@@ -136,12 +144,9 @@ struct CameraSearchView: View {
                                     .background(question.source == "local" ? Color.green : Color.blue)
                                     .cornerRadius(6)
                                     
-                                    // Question
                                     Text(question.question)
                                         .font(.subheadline)
-                                        .foregroundColor(.primary)
                                     
-                                    // Answer
                                     Text(question.answer)
                                         .font(.title3)
                                         .fontWeight(.bold)
@@ -156,7 +161,6 @@ struct CameraSearchView: View {
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .automatic))
-                    .frame(maxWidth: .infinity)
                 }
                 
                 // Bottom controls
@@ -182,7 +186,6 @@ struct CameraSearchView: View {
                     }
                     .disabled(isLoading || !cameraReady)
                     
-                    // Zoom reset
                     Button(action: { withAnimation { scale = 1.0 } }) {
                         Image(systemName: "arrow.counterclockwise")
                             .font(.title3)
@@ -225,14 +228,18 @@ struct CameraSearchView: View {
     }
     
     private func recognizeAndSearch(image: UIImage) async {
+        // Throttle: don't recognize too frequently
+        let now = Date()
+        guard now.timeIntervalSince(lastRecognizeTime) > recognizeInterval else { return }
+        
         await MainActor.run {
+            guard !isLoading else { return }
             isLoading = true
+            lastRecognizeTime = now
         }
         
         guard let text = await OCRService.shared.recognizeText(from: image) else {
-            await MainActor.run {
-                isLoading = false
-            }
+            await MainActor.run { isLoading = false }
             return
         }
         
@@ -247,30 +254,37 @@ struct CameraSearchView: View {
             isLoading = false
             
             if case .found(let q) = searchResult {
-                recognizedQuestions.insert(q, at: 0)
-                if recognizedQuestions.count > 5 {
-                    recognizedQuestions.removeLast()
+                // Avoid duplicates
+                if recognizedQuestions.first?.question != q.question {
+                    recognizedQuestions.insert(q, at: 0)
+                    if recognizedQuestions.count > 5 {
+                        recognizedQuestions.removeLast()
+                    }
+                    currentIndex = 0
+                    
+                    let record = SearchRecord(question: q.question, answer: q.answer, source: q.source, timestamp: Date())
+                    appState.searchHistory.insert(record, at: 0)
                 }
-                currentIndex = 0
-                
-                let record = SearchRecord(question: q.question, answer: q.answer, source: q.source, timestamp: Date())
-                appState.searchHistory.insert(record, at: 0)
             }
         }
     }
 }
 
-// MARK: - Scalable Camera Preview (pinch to zoom)
-struct ScalableCameraPreview: UIViewRepresentable {
+// MARK: - Auto Capture Preview (continuously captures frames for auto-recognition)
+struct AutoCapturePreview: UIViewRepresentable {
     let session: AVCaptureSession
     @Binding var scale: CGFloat
+    @Binding var autoRecognize: Bool
+    let onCapture: (UIImage) -> Void
     
-    func makeUIView(context: Context) -> PinchZoomView {
-        let view = PinchZoomView()
+    func makeUIView(context: Context) -> AutoCaptureView {
+        let view = AutoCaptureView()
         let layer = AVCaptureVideoPreviewLayer(session: session)
         layer.videoGravity = .resizeAspectFill
         view.previewLayer = layer
         view.layer.addSublayer(layer)
+        view.onCapture = onCapture
+        view.autoRecognize = autoRecognize
         
         let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
         view.addGestureRecognizer(pinch)
@@ -278,9 +292,10 @@ struct ScalableCameraPreview: UIViewRepresentable {
         return view
     }
     
-    func updateUIView(_ uiView: PinchZoomView, context: Context) {
+    func updateUIView(_ uiView: AutoCaptureView, context: Context) {
         DispatchQueue.main.async {
             uiView.previewLayer?.frame = uiView.bounds
+            uiView.autoRecognize = autoRecognize
         }
     }
     
@@ -288,11 +303,60 @@ struct ScalableCameraPreview: UIViewRepresentable {
         Coordinator(scale: $scale)
     }
     
-    class PinchZoomView: UIView {
+    class AutoCaptureView: UIView {
         var previewLayer: AVCaptureVideoPreviewLayer?
+        var onCapture: ((UIImage) -> Void)?
+        var autoRecognize: Bool = true
+        private var captureTimer: Timer?
+        private var lastCaptureTime: Date = Date.distantPast
+        
         override func layoutSubviews() {
             super.layoutSubviews()
             previewLayer?.frame = bounds
+            startAutoCapture()
+        }
+        
+        func startAutoCapture() {
+            captureTimer?.invalidate()
+            captureTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { [weak self] _ in
+                guard let self = self, self.autoRecognize else { return }
+                self.captureCurrentFrame()
+            }
+        }
+        
+        private func captureCurrentFrame() {
+            let now = Date()
+            guard now.timeIntervalSince(lastCaptureTime) > 2.0 else { return }
+            lastCaptureTime = now
+            
+            guard let previewLayer = previewLayer else { return }
+            
+            let renderer = UIGraphicsImageRenderer(bounds: bounds)
+            let image = renderer.image { ctx in
+                layer.render(in: ctx.cgContext)
+            }
+            
+            // Crop to the viewfinder area (center portion)
+            let cropRect = CGRect(
+                x: image.size.width * 0.05,
+                y: image.size.height * 0.2,
+                width: image.size.width * 0.9,
+                height: image.size.height * 0.6
+            )
+            
+            if let cgImage = image.cgImage?.cropping(to: CGRect(
+                x: cropRect.origin.x * image.scale,
+                y: cropRect.origin.y * image.scale,
+                width: cropRect.width * image.scale,
+                height: cropRect.height * image.scale
+            )) {
+                let cropped = UIImage(cgImage: cgImage)
+                onCapture?(cropped)
+            }
+        }
+        
+        deinit {
+            captureTimer?.invalidate()
         }
     }
     
@@ -321,12 +385,9 @@ struct ScalableCameraPreview: UIViewRepresentable {
             guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
             do {
                 try device.lockForConfiguration()
-                let zoomFactor = min(scale, device.activeFormat.videoMaxZoomFactor)
-                device.videoZoomFactor = zoomFactor
+                device.videoZoomFactor = min(scale, device.activeFormat.videoMaxZoomFactor)
                 device.unlockForConfiguration()
-            } catch {
-                print("Zoom error: \(error)")
-            }
+            } catch {}
         }
     }
 }
@@ -335,58 +396,18 @@ struct ScalableCameraPreview: UIViewRepresentable {
 struct CornerBracketView: View {
     var body: some View {
         ZStack {
-            // Top-left
             Path { p in
-                p.move(to: CGPoint(x: 0, y: 20))
-                p.addLine(to: CGPoint(x: 0, y: 0))
-                p.addLine(to: CGPoint(x: 20, y: 0))
-            }
-            .stroke(Color.blue, lineWidth: 3)
-            
-            // Top-right
+                p.move(to: CGPoint(x: 0, y: 20)); p.addLine(to: CGPoint(x: 0, y: 0)); p.addLine(to: CGPoint(x: 20, y: 0))
+            }.stroke(Color.blue, lineWidth: 3)
             Path { p in
-                p.move(to: CGPoint(x: 40, y: 0))
-                p.addLine(to: CGPoint(x: 60, y: 0))
-                p.addLine(to: CGPoint(x: 60, y: 20))
-            }
-            .stroke(Color.blue, lineWidth: 3)
-            
-            // Bottom-left
+                p.move(to: CGPoint(x: 40, y: 0)); p.addLine(to: CGPoint(x: 60, y: 0)); p.addLine(to: CGPoint(x: 60, y: 20))
+            }.stroke(Color.blue, lineWidth: 3)
             Path { p in
-                p.move(to: CGPoint(x: 0, y: 40))
-                p.addLine(to: CGPoint(x: 0, y: 60))
-                p.addLine(to: CGPoint(x: 20, y: 60))
-            }
-            .stroke(Color.blue, lineWidth: 3)
-            
-            // Bottom-right
+                p.move(to: CGPoint(x: 0, y: 40)); p.addLine(to: CGPoint(x: 0, y: 60)); p.addLine(to: CGPoint(x: 20, y: 60))
+            }.stroke(Color.blue, lineWidth: 3)
             Path { p in
-                p.move(to: CGPoint(x: 40, y: 60))
-                p.addLine(to: CGPoint(x: 60, y: 60))
-                p.addLine(to: CGPoint(x: 60, y: 40))
-            }
-            .stroke(Color.blue, lineWidth: 3)
-        }
-    }
-}
-
-// MARK: - Camera Preview (legacy)
-struct CameraPreviewView: UIViewRepresentable {
-    let session: AVCaptureSession
-    
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        let layer = AVCaptureVideoPreviewLayer(session: session)
-        layer.videoGravity = .resizeAspectFill
-        view.layer.addSublayer(layer)
-        return view
-    }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            if let layer = uiView.layer.sublayers?.first as? AVCaptureVideoPreviewLayer {
-                layer.frame = uiView.bounds
-            }
+                p.move(to: CGPoint(x: 40, y: 60)); p.addLine(to: CGPoint(x: 60, y: 60)); p.addLine(to: CGPoint(x: 60, y: 40))
+            }.stroke(Color.blue, lineWidth: 3)
         }
     }
 }
@@ -414,10 +435,7 @@ struct PhotoPicker: UIViewControllerRepresentable {
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             picker.dismiss(animated: true)
             guard let provider = results.first?.itemProvider,
-                  provider.canLoadObject(ofClass: UIImage.self) else {
-                onPick(nil)
-                return
-            }
+                  provider.canLoadObject(ofClass: UIImage.self) else { onPick(nil); return }
             provider.loadObject(ofClass: UIImage.self) { image, _ in
                 DispatchQueue.main.async { self.onPick(image as? UIImage) }
             }
