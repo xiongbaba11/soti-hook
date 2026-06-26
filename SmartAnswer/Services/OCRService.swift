@@ -5,12 +5,17 @@ import Vision
 class OCRService {
     static let shared = OCRService()
     
+    // Default Baidu OCR credentials
+    private let defaultApiKey = "lj7nn2nsItgfQPfPcME1xg4K"
+    private let defaultSecretKey = "wxvEhZF5NkC3YHjoZz0OckbIZG4zpwdR"
+    
     func recognizeText(from image: UIImage) async -> String? {
-        // Try Baidu OCR first if configured
-        if let baiduKey = UserDefaults.standard.string(forKey: "baiduApiKey"),
-           let baiduSecret = UserDefaults.standard.string(forKey: "baiduSecretKey"),
-           !baiduKey.isEmpty, !baiduSecret.isEmpty {
-            if let result = await BaiduOCRService.shared.recognizeText(from: image, apiKey: baiduKey, secretKey: baiduSecret) {
+        // Use Baidu OCR (user-configured or default)
+        let apiKey = UserDefaults.standard.string(forKey: "baiduApiKey") ?? defaultApiKey
+        let secretKey = UserDefaults.standard.string(forKey: "baiduSecretKey") ?? defaultSecretKey
+        
+        if !apiKey.isEmpty && !secretKey.isEmpty {
+            if let result = await BaiduOCRService.shared.recognizeText(from: image, apiKey: apiKey, secretKey: secretKey) {
                 return result
             }
             print("OCR: Baidu failed, falling back to Vision")

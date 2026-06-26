@@ -2,8 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    @State private var baiduApiKey = UserDefaults.standard.string(forKey: "baiduApiKey") ?? ""
-    @State private var baiduSecretKey = UserDefaults.standard.string(forKey: "baiduSecretKey") ?? ""
+    @State private var baiduApiKey = UserDefaults.standard.string(forKey: "baiduApiKey") ?? "lj7nn2nsItgfQPfPcME1xg4K"
+    @State private var baiduSecretKey = UserDefaults.standard.string(forKey: "baiduSecretKey") ?? "wxvEhZF5NkC3YHjoZz0OckbIZG4zpwdR"
     
     var body: some View {
         NavigationView {
@@ -73,16 +73,16 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                     
                     HStack {
-                        Image(systemName: baiduApiKey.isEmpty ? "circle" : "checkmark.circle.fill")
-                            .foregroundColor(baiduApiKey.isEmpty ? .secondary : .green)
-                        Text(baiduApiKey.isEmpty ? "未配置（使用Apple Vision）" : "已配置（百度OCR优先）")
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                        Text("已配置（百度OCR）")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 } header: {
-                    Text("百度OCR（可选）")
+                    Text("百度OCR")
                 } footer: {
-                    Text("百度OCR中文识别更准，每月免费1000次。获取: cloud.baidu.com → 文字识别")
+                    Text("每月免费1000次，中文识别准确率高")
                 }
                 
                 // History
@@ -132,6 +132,12 @@ struct SettingsView: View {
                         Text("题库数")
                         Spacer()
                         Text("\(appState.questionBanks.count)")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("OCR")
+                        Spacer()
+                        Text("百度OCR + Apple Vision")
                             .foregroundColor(.secondary)
                     }
                 }
