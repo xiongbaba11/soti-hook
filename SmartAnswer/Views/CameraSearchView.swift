@@ -297,9 +297,10 @@ struct CornerAccent: View {
     }
     
     private var horizontalOffset: CGFloat {
+        let half = CGFloat(10)
         switch position {
-        case .topLeading, .bottomLeading: return length / 2
-        case .topTrailing, .bottomTrailing: return -length / 2
+        case .topLeading, .bottomLeading: return half
+        case .topTrailing, .bottomTrailing: return -half
         }
     }
     
