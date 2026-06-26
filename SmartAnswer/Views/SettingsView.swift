@@ -2,14 +2,16 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
+    @State private var baiduApiKey = UserDefaults.standard.string(forKey: "baiduApiKey") ?? ""
+    @State private var baiduSecretKey = UserDefaults.standard.string(forKey: "baiduSecretKey") ?? ""
     
     var body: some View {
         NavigationView {
             List {
-                // API Config
+                // DeepSeek API Config
                 Section {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("API Key")
+                        Text("DeepSeek API Key")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         SecureField("sk-...", text: $appState.token)
@@ -40,6 +42,47 @@ struct SettingsView: View {
                     Text("AI 模型")
                 } footer: {
                     Text("获取 API Key: platform.deepseek.com")
+                }
+                
+                // Baidu OCR Config
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("API Key")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        TextField("百度OCR API Key", text: $baiduApiKey)
+                            .textContentType(.username)
+                            .font(.subheadline)
+                            .onChange(of: baiduApiKey) { val in
+                                UserDefaults.standard.set(val, forKey: "baiduApiKey")
+                            }
+                    }
+                    .padding(.vertical, 4)
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Secret Key")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        SecureField("百度OCR Secret Key", text: $baiduSecretKey)
+                            .textContentType(.password)
+                            .font(.subheadline)
+                            .onChange(of: baiduSecretKey) { val in
+                                UserDefaults.standard.set(val, forKey: "baiduSecretKey")
+                            }
+                    }
+                    .padding(.vertical, 4)
+                    
+                    HStack {
+                        Image(systemName: baiduApiKey.isEmpty ? "circle" : "checkmark.circle.fill")
+                            .foregroundColor(baiduApiKey.isEmpty ? .secondary : .green)
+                        Text(baiduApiKey.isEmpty ? "未配置（使用Apple Vision）" : "已配置（百度OCR优先）")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                } header: {
+                    Text("百度OCR（可选）")
+                } footer: {
+                    Text("百度OCR中文识别更准，每月免费1000次。获取: cloud.baidu.com → 文字识别")
                 }
                 
                 // History
@@ -82,7 +125,7 @@ struct SettingsView: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.0.0")
+                        Text("1.1.0")
                             .foregroundColor(.secondary)
                     }
                     HStack {

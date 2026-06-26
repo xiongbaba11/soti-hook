@@ -6,6 +6,21 @@ class OCRService {
     static let shared = OCRService()
     
     func recognizeText(from image: UIImage) async -> String? {
+        // Try Baidu OCR first if configured
+        if let baiduKey = UserDefaults.standard.string(forKey: "baiduApiKey"),
+           let baiduSecret = UserDefaults.standard.string(forKey: "baiduSecretKey"),
+           !baiduKey.isEmpty, !baiduSecret.isEmpty {
+            if let result = await BaiduOCRService.shared.recognizeText(from: image, apiKey: baiduKey, secretKey: baiduSecret) {
+                return result
+            }
+            print("OCR: Baidu failed, falling back to Vision")
+        }
+        
+        // Fallback: Apple Vision (local)
+        return await recognizeWithVision(from: image)
+    }
+    
+    private func recognizeWithVision(from image: UIImage) async -> String? {
         guard let cgImage = image.cgImage else { return nil }
         
         return await withCheckedContinuation { continuation in
@@ -15,9 +30,8 @@ class OCRService {
                     return
                 }
                 
-                let observations = (request.results as? [Any]) ?? []
+                let observations = request.results as? [VNRecognizedTextObservation] ?? []
                 let text = observations.compactMap { obs -> String? in
-                    guard let obs = obs as? VNRecognizedTextObservation else { return nil }
                     return obs.topCandidates(1).first?.string
                 }.joined(separator: "\n")
                 
