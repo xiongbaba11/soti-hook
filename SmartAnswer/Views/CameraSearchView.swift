@@ -8,90 +8,195 @@ struct CameraSearchView: View {
     @State private var result: SearchResult?
     @State private var isLoading = false
     @State private var showPhotoPicker = false
-    @State private var showResultSheet = false
     @State private var cameraReady = false
+    @State private var recognizedQuestions: [Question] = []
+    @State private var currentIndex = 0
+    @State private var scale: CGFloat = 1.0
     
     var body: some View {
-        ZStack {
-            // Full-screen camera background
-            if cameraReady {
-                CameraPreviewView(session: camera.session)
-                    .ignoresSafeArea()
-            } else {
-                Color.black.ignoresSafeArea()
-                ProgressView()
-                    .tint(.white)
-                    .scaleEffect(1.5)
-            }
-            
-            // Viewfinder overlay
-            VStack {
-                Spacer()
+        VStack(spacing: 0) {
+            // Camera area (top half)
+            ZStack {
+                if cameraReady {
+                    ScalableCameraPreview(session: camera.session, scale: $scale)
+                        .clipped()
+                } else {
+                    Color.black
+                    ProgressView()
+                        .tint(.white)
+                        .scaleEffect(1.2)
+                }
                 
                 // Viewfinder frame
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.white.opacity(0.6), lineWidth: 2)
-                    .frame(width: 300, height: 220)
-                    .overlay(
-                        ZStack {
-                            CornerAccent(position: .topLeading)
-                            CornerAccent(position: .topTrailing)
-                            CornerAccent(position: .bottomLeading)
-                            CornerAccent(position: .bottomTrailing)
-                        }
-                    )
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(Color.blue.opacity(0.6), lineWidth: 2)
+                    .frame(width: 260, height: 180)
+                    .allowsHitTesting(false)
                 
-                Spacer()
-                
-                // Status indicator
-                if isLoading {
-                    HStack(spacing: 10) {
-                        ProgressView()
-                            .tint(.white)
-                        Text("AI 识别中...")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
+                // Hint at bottom
+                VStack {
+                    Spacer()
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                        Text("移动镜头，画面稳定后自动识别")
+                            .font(.caption)
                             .foregroundColor(.white)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
                     .background(Color.black.opacity(0.5))
-                    .cornerRadius(25)
-                    .padding(.bottom, 12)
+                    .cornerRadius(20)
+                    .padding(.bottom, 16)
+                }
+                
+                // Loading overlay
+                if isLoading {
+                    VStack {
+                        Spacer()
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("AI 识别中...")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(Color.blue.opacity(0.8))
+                        .cornerRadius(20)
+                        .padding(.bottom, 50)
+                    }
+                }
+            }
+            .frame(height: UIScreen.main.bounds.height * 0.45)
+            
+            // Result area (bottom half)
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("识别结果")
+                            .font(.headline)
+                        Text("最多显示5道，左右滑动查看")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Text("\(recognizedQuestions.isEmpty ? 0 : currentIndex + 1)/\(recognizedQuestions.count)")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.blue)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                
+                if recognizedQuestions.isEmpty {
+                    // Waiting state
+                    VStack(spacing: 12) {
+                        Spacer()
+                        // Corner brackets icon
+                        ZStack {
+                            CornerBracketView()
+                                .frame(width: 60, height: 60)
+                        }
+                        .frame(width: 80, height: 80)
+                        .background(Color.blue.opacity(0.08))
+                        .cornerRadius(20)
+                        
+                        Text("等待识别题目")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        Text("把题干和选项完整放入上方画面，移动后保持稳定。")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    // Swipeable result cards
+                    TabView(selection: $currentIndex) {
+                        ForEach(Array(recognizedQuestions.enumerated()), id: \.offset) { index, question in
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    // Source badge
+                                    HStack {
+                                        Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
+                                            .font(.caption2)
+                                        Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
+                                            .font(.caption2)
+                                            .fontWeight(.semibold)
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(question.source == "local" ? Color.green : Color.blue)
+                                    .cornerRadius(6)
+                                    
+                                    // Question
+                                    Text(question.question)
+                                        .font(.subheadline)
+                                        .foregroundColor(.primary)
+                                    
+                                    // Answer
+                                    Text(question.answer)
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.blue)
+                                }
+                                .padding(16)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(16)
+                                .padding(.horizontal, 16)
+                            }
+                            .tag(index)
+                        }
+                    }
+                    .tabViewStyle(.page(indexDisplayMode: .automatic))
+                    .frame(maxWidth: .infinity)
                 }
                 
                 // Bottom controls
-                HStack(spacing: 50) {
+                HStack(spacing: 40) {
                     Button(action: { showPhotoPicker = true }) {
                         Image(systemName: "photo.on.rectangle")
-                            .font(.title2)
-                            .foregroundColor(.white)
-                            .frame(width: 50, height: 50)
-                            .background(Color.black.opacity(0.4))
-                            .cornerRadius(15)
+                            .font(.title3)
+                            .foregroundColor(.gray)
+                            .frame(width: 44, height: 44)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
                     }
                     
                     Button(action: takePhoto) {
                         ZStack {
                             Circle()
-                                .stroke(Color.white, lineWidth: 4)
-                                .frame(width: 78, height: 78)
-                            Circle()
-                                .fill(Color.white)
+                                .stroke(Color.blue, lineWidth: 3)
                                 .frame(width: 64, height: 64)
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 54, height: 54)
                         }
                     }
                     .disabled(isLoading || !cameraReady)
-                    .scaleEffect(isLoading ? 0.9 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: isLoading)
                     
-                    Color.clear.frame(width: 50, height: 50)
+                    // Zoom reset
+                    Button(action: { withAnimation { scale = 1.0 } }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.title3)
+                            .foregroundColor(.gray)
+                            .frame(width: 44, height: 44)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                    }
                 }
-                .padding(.bottom, 30)
+                .padding(.vertical, 12)
+                .padding(.bottom, 8)
             }
-        }
-        .sheet(isPresented: $showResultSheet) {
-            ResultSheet(result: result, isLoading: isLoading)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(.systemBackground))
         }
         .sheet(isPresented: $showPhotoPicker) {
             PhotoPicker { image in
@@ -122,14 +227,11 @@ struct CameraSearchView: View {
     private func recognizeAndSearch(image: UIImage) async {
         await MainActor.run {
             isLoading = true
-            result = nil
         }
         
         guard let text = await OCRService.shared.recognizeText(from: image) else {
             await MainActor.run {
                 isLoading = false
-                result = .error("无法识别文字，请重新拍照")
-                showResultSheet = true
             }
             return
         }
@@ -143,10 +245,14 @@ struct CameraSearchView: View {
         
         await MainActor.run {
             isLoading = false
-            result = searchResult
-            showResultSheet = true
             
             if case .found(let q) = searchResult {
+                recognizedQuestions.insert(q, at: 0)
+                if recognizedQuestions.count > 5 {
+                    recognizedQuestions.removeLast()
+                }
+                currentIndex = 0
+                
                 let record = SearchRecord(question: q.question, answer: q.answer, source: q.source, timestamp: Date())
                 appState.searchHistory.insert(record, at: 0)
             }
@@ -154,169 +260,117 @@ struct CameraSearchView: View {
     }
 }
 
-// MARK: - Result Sheet (iOS 15 compatible)
-struct ResultSheet: View {
-    let result: SearchResult?
-    let isLoading: Bool
-    @Environment(\.dismiss) private var dismiss
+// MARK: - Scalable Camera Preview (pinch to zoom)
+struct ScalableCameraPreview: UIViewRepresentable {
+    let session: AVCaptureSession
+    @Binding var scale: CGFloat
     
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 16) {
-                if isLoading {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.3)
-                        Text("AI 正在分析题目...")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if let result = result {
-                    switch result {
-                    case .found(let question):
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: 12) {
-                                // Source badge
-                                HStack {
-                                    Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
-                                        .font(.caption)
-                                    Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
-                                        .font(.caption)
-                                        .fontWeight(.medium)
-                                }
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(question.source == "local" ? Color.green : Color.blue)
-                                .cornerRadius(8)
-                                
-                                Text("题目")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(question.question)
-                                    .font(.subheadline)
-                                    .foregroundColor(.primary)
-                                    .padding(12)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(12)
-                                
-                                Text("答案")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(question.answer)
-                                    .font(.title3)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.blue)
-                                    .padding(16)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.blue.opacity(0.1))
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(Color.blue.opacity(0.3), lineWidth: 1)
-                                    )
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.top, 16)
-                        }
-                        
-                    case .notFound:
-                        VStack(spacing: 12) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.largeTitle)
-                                .foregroundColor(.secondary)
-                            Text("未找到匹配答案")
-                                .font(.headline)
-                            Text("试试调整拍照角度或导入更多题库")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        
-                    case .error(let msg):
-                        VStack(spacing: 12) {
-                            Image(systemName: "exclamationmark.triangle")
-                                .font(.largeTitle)
-                                .foregroundColor(.orange)
-                            Text(msg)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .padding()
-                    }
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "camera.viewfinder")
-                            .font(.largeTitle)
-                            .foregroundColor(.blue)
-                        Text("对准题目拍照")
-                            .font(.headline)
-                        Text("支持选择题、填空题、问答题")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .navigationTitle("搜题结果")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("关闭") { dismiss() }
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Corner Accent
-struct CornerAccent: View {
-    enum Position { case topLeading, topTrailing, bottomLeading, bottomTrailing }
-    let position: Position
-    
-    var body: some View {
-        let length: CGFloat = 20
-        let lineWidth: CGFloat = 3
+    func makeUIView(context: Context) -> PinchZoomView {
+        let view = PinchZoomView()
+        let layer = AVCaptureVideoPreviewLayer(session: session)
+        layer.videoGravity = .resizeAspectFill
+        view.previewLayer = layer
+        view.layer.addSublayer(layer)
         
-        ZStack {
-            Rectangle()
-                .fill(Color.blue)
-                .frame(width: length, height: lineWidth)
-                .offset(x: horizontalOffset, y: verticalEdge)
-            
-            Rectangle()
-                .fill(Color.blue)
-                .frame(width: lineWidth, height: length)
-                .offset(x: verticalEdge, y: horizontalOffset)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+        let pinch = UIPinchGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handlePinch(_:)))
+        view.addGestureRecognizer(pinch)
+        
+        return view
     }
     
-    private var horizontalOffset: CGFloat {
-        let half = CGFloat(10)
-        switch position {
-        case .topLeading, .bottomLeading: return half
-        case .topTrailing, .bottomTrailing: return -half
+    func updateUIView(_ uiView: PinchZoomView, context: Context) {
+        DispatchQueue.main.async {
+            uiView.previewLayer?.frame = uiView.bounds
         }
     }
     
-    private var verticalEdge: CGFloat { 0 }
+    func makeCoordinator() -> Coordinator {
+        Coordinator(scale: $scale)
+    }
     
-    private var alignment: Alignment {
-        switch position {
-        case .topLeading: return .topLeading
-        case .topTrailing: return .topTrailing
-        case .bottomLeading: return .bottomLeading
-        case .bottomTrailing: return .bottomTrailing
+    class PinchZoomView: UIView {
+        var previewLayer: AVCaptureVideoPreviewLayer?
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            previewLayer?.frame = bounds
+        }
+    }
+    
+    class Coordinator: NSObject {
+        @Binding var scale: CGFloat
+        private var initialScale: CGFloat = 1.0
+        
+        init(scale: Binding<CGFloat>) {
+            _scale = scale
+        }
+        
+        @objc func handlePinch(_ gesture: UIPinchGestureRecognizer) {
+            switch gesture.state {
+            case .began:
+                initialScale = scale
+            case .changed:
+                let newScale = initialScale * gesture.scale
+                scale = min(max(newScale, 1.0), 5.0)
+                applyZoom(scale)
+            default:
+                break
+            }
+        }
+        
+        private func applyZoom(_ scale: CGFloat) {
+            guard let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else { return }
+            do {
+                try device.lockForConfiguration()
+                let zoomFactor = min(scale, device.activeFormat.videoMaxZoomFactor)
+                device.videoZoomFactor = zoomFactor
+                device.unlockForConfiguration()
+            } catch {
+                print("Zoom error: \(error)")
+            }
         }
     }
 }
 
-// MARK: - Camera Preview
+// MARK: - Corner Bracket View
+struct CornerBracketView: View {
+    var body: some View {
+        ZStack {
+            // Top-left
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: 20))
+                p.addLine(to: CGPoint(x: 0, y: 0))
+                p.addLine(to: CGPoint(x: 20, y: 0))
+            }
+            .stroke(Color.blue, lineWidth: 3)
+            
+            // Top-right
+            Path { p in
+                p.move(to: CGPoint(x: 40, y: 0))
+                p.addLine(to: CGPoint(x: 60, y: 0))
+                p.addLine(to: CGPoint(x: 60, y: 20))
+            }
+            .stroke(Color.blue, lineWidth: 3)
+            
+            // Bottom-left
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: 40))
+                p.addLine(to: CGPoint(x: 0, y: 60))
+                p.addLine(to: CGPoint(x: 20, y: 60))
+            }
+            .stroke(Color.blue, lineWidth: 3)
+            
+            // Bottom-right
+            Path { p in
+                p.move(to: CGPoint(x: 40, y: 60))
+                p.addLine(to: CGPoint(x: 60, y: 60))
+                p.addLine(to: CGPoint(x: 60, y: 40))
+            }
+            .stroke(Color.blue, lineWidth: 3)
+        }
+    }
+}
+
+// MARK: - Camera Preview (legacy)
 struct CameraPreviewView: UIViewRepresentable {
     let session: AVCaptureSession
     

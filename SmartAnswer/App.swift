@@ -49,5 +49,11 @@ class AppState: ObservableObject {
         self.preferLocal = UserDefaults.standard.object(forKey: "preferLocal") as? Bool ?? true
         QuestionBankManager.shared.loadBanks()
         self.questionBanks = QuestionBankManager.shared.banks
+        
+        // Load bundled example bank on first launch
+        if questionBanks.isEmpty {
+            QuestionBankManager.shared.loadBundledBank()
+            self.questionBanks = QuestionBankManager.shared.banks
+        }
     }
 }
