@@ -139,6 +139,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				EXT0D /* PBXTargetDependency */,
 			);
 			name = SmartAnswer;
 			productName = SmartAnswer;
@@ -349,3 +350,21 @@
 	};
 	rootObject = D5FFE7860DC645339ECFA859 /* Project object */;
 }
+
+/* Begin PBXTargetDependency section */
+		EXT0D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EXT006 /* ScreenExtension */;
+			targetProxy = EXT0E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXContainerItemProxy section */
+		EXT0E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D5FFE7860DC645339ECFA859 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EXT006;
+			remoteInfo = ScreenExtension;
+		};
+/* End PBXContainerItemProxy section */
