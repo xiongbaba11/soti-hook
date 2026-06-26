@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import AVFoundation
 
 class CameraService: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
     let session = AVCaptureSession()
