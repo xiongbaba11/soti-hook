@@ -13,34 +13,45 @@ struct QuestionBankView: View {
                 // Existing banks
                 Section {
                     if appState.questionBanks.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "books.vertical")
-                                .font(.largeTitle)
-                                .foregroundColor(.secondary)
-                            Text("暂无题库")
-                                .font(.headline)
-                            Text("点击下方导入，或从其他App分享文件到本App")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .multilineTextAlignment(.center)
+                        VStack(spacing: 16) {
+                            Spacer()
+                            ZStack {
+                                Circle()
+                                    .fill(DuoColors.orange.opacity(0.1))
+                                    .frame(width: 80, height: 80)
+                                Image(systemName: "books.vertical")
+                                    .font(.system(size: 32))
+                                    .foregroundColor(DuoColors.orange)
+                            }
+                            VStack(spacing: 8) {
+                                Text("暂无题库")
+                                    .font(.system(size: 18, weight: .bold))
+                                Text("点击下方导入，或从其他App分享")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(DuoColors.gray)
+                                    .multilineTextAlignment(.center)
+                            }
+                            Spacer()
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
                     }
                     
                     ForEach(appState.questionBanks) { bank in
-                        HStack(spacing: 12) {
+                        HStack(spacing: 14) {
                             Text(bankIcon(bank.name))
-                                .font(.title2)
-                            VStack(alignment: .leading, spacing: 3) {
+                                .font(.system(size: 28))
+                            
+                            VStack(alignment: .leading, spacing: 4) {
                                 Text(bank.name)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
+                                    .font(.system(size: 16, weight: .semibold))
                                 Text("\(bank.questionCount) 题 · \(bank.importDate, style: .date)")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 13))
+                                    .foregroundColor(DuoColors.gray)
                             }
+                            
                             Spacer()
+                            
                             Toggle("", isOn: Binding(
                                 get: { bank.enabled },
                                 set: { _ in
@@ -49,69 +60,96 @@ struct QuestionBankView: View {
                                 }
                             ))
                             .labelsHidden()
+                            .tint(DuoColors.green)
                         }
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 6)
                     }
                     .onDelete { indexSet in
-                        for index in indexSet {
-                            QuestionBankManager.shared.deleteBank(appState.questionBanks[index])
+                        withAnimation {
+                            for index in indexSet {
+                                QuestionBankManager.shared.deleteBank(appState.questionBanks[index])
+                            }
+                            appState.questionBanks = QuestionBankManager.shared.banks
                         }
-                        appState.questionBanks = QuestionBankManager.shared.banks
                     }
                 } header: {
                     Text("已导入题库")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 }
                 
                 // Import section
                 Section {
-                    Button(action: {
-                        showImporter = true
-                    }) {
-                        HStack {
-                            Image(systemName: "plus.circle.fill")
-                                .foregroundColor(.blue)
+                    Button(action: { showImporter = true }) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(DuoColors.blue)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "plus")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
                             Text("导入题库文件")
-                                .foregroundColor(.blue)
-                                .fontWeight(.medium)
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(DuoColors.blue)
                         }
                     }
                     
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Image(systemName: "square.and.arrow.up")
-                                .foregroundColor(.green)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(DuoColors.green)
+                                    .frame(width: 32, height: 32)
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                            }
                             Text("从其他App导入")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
+                                .font(.system(size: 15, weight: .medium))
                         }
-                        Text("在微信、QQ等App中打开题库文件 → 分享 → 选择「智能答题」")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text("在微信、QQ中打开文件 → 分享 → 选择「智能答题」")
+                            .font(.system(size: 13))
+                            .foregroundColor(DuoColors.gray)
+                            .padding(.leading, 44)
                     }
                     .padding(.vertical, 4)
                 } header: {
                     Text("导入新题库")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 } footer: {
-                    Text("支持格式: .txt (题目?答案) · .json")
+                    Text("支持 .txt / .json 格式")
+                        .font(.system(size: 12))
                 }
                 
                 // Stats
-                Section("题库统计") {
+                Section {
                     HStack {
                         Text("总题目数")
+                            .font(.system(size: 15, weight: .medium))
                         Spacer()
                         Text("\(QuestionBankManager.shared.totalQuestions)")
-                            .foregroundColor(.secondary)
-                            .fontWeight(.semibold)
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(DuoColors.green)
                     }
                     HStack {
                         Text("已启用题库")
+                            .font(.system(size: 15, weight: .medium))
                         Spacer()
                         Text("\(appState.questionBanks.filter { $0.enabled }.count)")
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 15))
+                            .foregroundColor(DuoColors.gray)
                     }
+                } header: {
+                    Text("题库统计")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 }
             }
+            .listStyle(.insetGrouped)
+            .background(DuoColors.background)
             .navigationTitle("题库管理")
             .fileImporter(
                 isPresented: $showImporter,
@@ -144,13 +182,13 @@ struct QuestionBankView: View {
                 if importSuccess == true {
                     return Alert(
                         title: Text("✅ 导入成功"),
-                        message: Text("题库已成功导入，可以在「拍照」或「录屏」中使用"),
+                        message: Text("题库已导入，可以在拍照或录屏中使用"),
                         dismissButton: .default(Text("确定")) { importSuccess = nil }
                     )
                 } else {
                     return Alert(
                         title: Text("❌ 导入失败"),
-                        message: Text("请确保文件格式正确（.txt 或 .json）"),
+                        message: Text("请确保文件格式正确"),
                         dismissButton: .default(Text("确定")) { importSuccess = nil }
                     )
                 }

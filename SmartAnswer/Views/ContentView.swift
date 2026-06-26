@@ -7,28 +7,28 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             CameraSearchView()
                 .tabItem {
-                    Label("拍照", systemImage: "camera.fill")
+                    DuoTabItem(icon: "camera.fill", title: "拍照", isSelected: selectedTab == 0, color: DuoColors.green)
                 }
                 .tag(0)
             
             ScreenSearchView()
                 .tabItem {
-                    Label("录屏", systemImage: "record.circle")
+                    DuoTabItem(icon: "record.circle", title: "录屏", isSelected: selectedTab == 1, color: DuoColors.blue)
                 }
                 .tag(1)
             
             QuestionBankView()
                 .tabItem {
-                    Label("题库", systemImage: "books.vertical.fill")
+                    DuoTabItem(icon: "books.vertical.fill", title: "题库", isSelected: selectedTab == 2, color: DuoColors.orange)
                 }
                 .tag(2)
             
             SettingsView()
                 .tabItem {
-                    Label("设置", systemImage: "gearshape.fill")
+                    DuoTabItem(icon: "gearshape.fill", title: "设置", isSelected: selectedTab == 3, color: DuoColors.gray)
                 }
                 .tag(3)
         }
-        .tint(.blue)
+        .tint(DuoColors.green)
     }
 }

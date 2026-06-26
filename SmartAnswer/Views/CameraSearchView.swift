@@ -13,12 +13,13 @@ struct CameraSearchView: View {
     @State private var scale: CGFloat = 1.0
     @State private var autoRecognize = true
     @State private var lastRecognizeTime: Date = Date.distantPast
+    @State private var showSuccess = false
     
     private let recognizeInterval: TimeInterval = 2.5
     
     var body: some View {
         VStack(spacing: 0) {
-            // Camera area (top half)
+            // Camera area
             ZStack {
                 if cameraReady {
                     AutoCapturePreview(
@@ -31,130 +32,159 @@ struct CameraSearchView: View {
                     )
                     .clipped()
                 } else {
-                    Color.black
+                    DuoColors.background
                     ProgressView()
-                        .tint(.white)
+                        .tint(DuoColors.green)
                         .scaleEffect(1.2)
                 }
                 
-                // Full-width blue frame
-                Rectangle()
-                    .stroke(Color.blue.opacity(0.7), lineWidth: 2.5)
+                // Viewfinder frame
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(DuoColors.green.opacity(0.6), lineWidth: 3)
                     .frame(maxWidth: .infinity)
-                    .padding(.horizontal, 12)
-                    .frame(height: 200)
+                    .padding(.horizontal, 20)
+                    .frame(height: 220)
                 
-                // Hint at bottom
+                // Status badge
                 VStack {
                     Spacer()
-                    HStack(spacing: 6) {
+                    HStack(spacing: 8) {
                         Circle()
-                            .fill(autoRecognize ? Color.green : Color.gray)
-                            .frame(width: 6, height: 6)
-                        Text(autoRecognize ? "自动识别中..." : "点击快门手动识别")
-                            .font(.caption)
+                            .fill(autoRecognize ? DuoColors.green : DuoColors.gray)
+                            .frame(width: 8, height: 8)
+                        
+                        Text(autoRecognize ? "自动识别中" : "点击快门识别")
+                            .font(.system(size: 13, weight: .semibold))
                             .foregroundColor(.white)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color.black.opacity(0.5))
-                    .cornerRadius(20)
-                    .padding(.bottom, 16)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(
+                        Capsule()
+                            .fill(Color.black.opacity(0.6))
+                    )
+                    .padding(.bottom, 20)
                 }
                 
                 // Loading overlay
                 if isLoading {
                     VStack {
                         Spacer()
-                        HStack(spacing: 8) {
+                        HStack(spacing: 10) {
                             ProgressView()
                                 .tint(.white)
-                            Text("AI 识别中...")
-                                .font(.caption)
+                            Text("识别中...")
+                                .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(.white)
                         }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.8))
-                        .cornerRadius(20)
-                        .padding(.bottom, 50)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            Capsule()
+                                .fill(DuoColors.blue)
+                        )
+                        .padding(.bottom, 60)
                     }
+                }
+                
+                // Success checkmark
+                if showSuccess {
+                    SuccessCheckmark(show: showSuccess)
                 }
             }
             .frame(height: UIScreen.main.bounds.height * 0.45)
             
-            // Result area (bottom half)
+            // Results area
             VStack(spacing: 0) {
                 // Header
                 HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text("识别结果")
-                            .font(.headline)
-                        Text("最多显示5道，左右滑动查看")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 20, weight: .bold))
+                        Text("最多5道题，左右滑动")
+                            .font(.system(size: 13))
+                            .foregroundColor(DuoColors.gray)
                     }
+                    
                     Spacer()
-                    Text("\(recognizedQuestions.isEmpty ? 0 : currentIndex + 1)/\(recognizedQuestions.count)")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.blue)
+                    
+                    if !recognizedQuestions.isEmpty {
+                        Text("\(currentIndex + 1)/\(recognizedQuestions.count)")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(DuoColors.green)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(DuoColors.green.opacity(0.1))
+                            )
+                    }
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
                 
                 if recognizedQuestions.isEmpty {
-                    VStack(spacing: 12) {
+                    // Empty state
+                    VStack(spacing: 16) {
                         Spacer()
-                        ZStack {
-                            CornerBracketView()
-                                .frame(width: 60, height: 60)
-                        }
-                        .frame(width: 80, height: 80)
-                        .background(Color.blue.opacity(0.08))
-                        .cornerRadius(20)
                         
-                        Text("等待识别题目")
-                            .font(.headline)
-                        Text("把题干和选项完整放入上方画面，移动后保持稳定。")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
+                        ZStack {
+                            Circle()
+                                .fill(DuoColors.green.opacity(0.1))
+                                .frame(width: 100, height: 100)
+                            
+                            Image(systemName: "camera.viewfinder")
+                                .font(.system(size: 40))
+                                .foregroundColor(DuoColors.green)
+                        }
+                        
+                        VStack(spacing: 8) {
+                            Text("等待识别题目")
+                                .font(.system(size: 18, weight: .bold))
+                            
+                            Text("将题目放入取景框内\n保持稳定等待识别")
+                                .font(.system(size: 14))
+                                .foregroundColor(DuoColors.gray)
+                                .multilineTextAlignment(.center)
+                        }
+                        
                         Spacer()
                     }
-                    .frame(maxWidth: .infinity)
                 } else {
+                    // Results carousel
                     TabView(selection: $currentIndex) {
                         ForEach(Array(recognizedQuestions.enumerated()), id: \.offset) { index, question in
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 10) {
+                            DuoCard {
+                                VStack(alignment: .leading, spacing: 12) {
+                                    // Source badge
                                     HStack {
                                         Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
-                                            .font(.caption2)
+                                            .font(.system(size: 12))
                                         Text(question.source == "local" ? "本地题库" : question.source)
-                                            .font(.caption2)
-                                            .fontWeight(.semibold)
+                                            .font(.system(size: 12, weight: .semibold))
                                     }
                                     .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .background(question.source == "local" ? Color.green : Color.blue)
-                                    .cornerRadius(6)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        Capsule()
+                                            .fill(question.source == "local" ? DuoColors.green : DuoColors.blue)
+                                    )
                                     
+                                    // Question
                                     Text(question.question)
-                                        .font(.subheadline)
+                                        .font(.system(size: 15))
+                                        .lineLimit(3)
                                     
+                                    // Answer
                                     Text(question.answer)
-                                        .font(.title3)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.blue)
+                                        .font(.system(size: 22, weight: .bold))
+                                        .foregroundColor(DuoColors.green)
                                 }
-                                .padding(16)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(16)
-                                .padding(.horizontal, 16)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .padding(.horizontal, 20)
                             .tag(index)
                         }
                     }
@@ -162,42 +192,50 @@ struct CameraSearchView: View {
                 }
                 
                 // Bottom controls
-                HStack(spacing: 40) {
+                HStack(spacing: 50) {
                     Button(action: { showPhotoPicker = true }) {
                         Image(systemName: "photo.on.rectangle")
-                            .font(.title3)
-                            .foregroundColor(.gray)
-                            .frame(width: 44, height: 44)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .font(.system(size: 20))
+                            .foregroundColor(DuoColors.gray)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(DuoColors.grayLight)
+                            )
                     }
                     
                     Button(action: takePhoto) {
                         ZStack {
                             Circle()
-                                .stroke(Color.blue, lineWidth: 3)
-                                .frame(width: 64, height: 64)
+                                .stroke(DuoColors.green, lineWidth: 4)
+                                .frame(width: 72, height: 72)
+                            
                             Circle()
-                                .fill(Color.blue)
-                                .frame(width: 54, height: 54)
+                                .fill(DuoColors.green)
+                                .frame(width: 60, height: 60)
+                                .shadow(color: DuoColors.green.opacity(0.4), radius: 8, y: 4)
                         }
                     }
                     .disabled(isLoading || !cameraReady)
+                    .scaleEffect(isLoading ? 0.95 : 1.0)
+                    .animation(.easeInOut(duration: 0.2), value: isLoading)
                     
                     Button(action: { withAnimation { scale = 1.0 } }) {
                         Image(systemName: "arrow.counterclockwise")
-                            .font(.title3)
-                            .foregroundColor(.gray)
-                            .frame(width: 44, height: 44)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .font(.system(size: 20))
+                            .foregroundColor(DuoColors.gray)
+                            .frame(width: 50, height: 50)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .fill(DuoColors.grayLight)
+                            )
                     }
                 }
-                .padding(.vertical, 12)
+                .padding(.vertical, 16)
                 .padding(.bottom, 8)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(.systemBackground))
+            .background(DuoColors.background)
         }
         .sheet(isPresented: $showPhotoPicker) {
             PhotoPicker { image in
@@ -210,7 +248,9 @@ struct CameraSearchView: View {
             DispatchQueue.global(qos: .userInitiated).async {
                 camera.start()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    cameraReady = true
+                    withAnimation(.easeIn(duration: 0.3)) {
+                        cameraReady = true
+                    }
                 }
             }
         }
@@ -253,11 +293,19 @@ struct CameraSearchView: View {
             
             if case .found(let q) = searchResult {
                 if recognizedQuestions.first?.question != q.question {
-                    recognizedQuestions.insert(q, at: 0)
-                    if recognizedQuestions.count > 5 {
-                        recognizedQuestions.removeLast()
+                    withAnimation(.interpolatingSpring(stiffness: 200, damping: 15)) {
+                        recognizedQuestions.insert(q, at: 0)
+                        if recognizedQuestions.count > 5 {
+                            recognizedQuestions.removeLast()
+                        }
+                        currentIndex = 0
+                        showSuccess = true
                     }
-                    currentIndex = 0
+                    
+                    // Hide success after 1s
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        withAnimation { showSuccess = false }
+                    }
                     
                     let record = SearchRecord(question: q.question, answer: q.answer, source: q.source, timestamp: Date())
                     appState.searchHistory.insert(record, at: 0)
@@ -384,26 +432,6 @@ struct AutoCapturePreview: UIViewRepresentable {
                 device.videoZoomFactor = min(scale, device.activeFormat.videoMaxZoomFactor)
                 device.unlockForConfiguration()
             } catch {}
-        }
-    }
-}
-
-// MARK: - Corner Bracket View
-struct CornerBracketView: View {
-    var body: some View {
-        ZStack {
-            Path { p in
-                p.move(to: CGPoint(x: 0, y: 20)); p.addLine(to: CGPoint(x: 0, y: 0)); p.addLine(to: CGPoint(x: 20, y: 0))
-            }.stroke(Color.blue, lineWidth: 3)
-            Path { p in
-                p.move(to: CGPoint(x: 40, y: 0)); p.addLine(to: CGPoint(x: 60, y: 0)); p.addLine(to: CGPoint(x: 60, y: 20))
-            }.stroke(Color.blue, lineWidth: 3)
-            Path { p in
-                p.move(to: CGPoint(x: 0, y: 40)); p.addLine(to: CGPoint(x: 0, y: 60)); p.addLine(to: CGPoint(x: 20, y: 60))
-            }.stroke(Color.blue, lineWidth: 3)
-            Path { p in
-                p.move(to: CGPoint(x: 40, y: 60)); p.addLine(to: CGPoint(x: 60, y: 60)); p.addLine(to: CGPoint(x: 60, y: 40))
-            }.stroke(Color.blue, lineWidth: 3)
         }
     }
 }

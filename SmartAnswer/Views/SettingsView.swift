@@ -20,10 +20,10 @@ struct SettingsView: View {
                         appState.modelName = newProvider.defaultModel
                     }
                     
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("\(appState.aiProvider.displayName) API Key")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(DuoColors.gray)
                         SecureField(appState.aiProvider.keyPlaceholder, text: Binding(
                             get: {
                                 switch appState.aiProvider {
@@ -39,12 +39,13 @@ struct SettingsView: View {
                             }
                         ))
                         .textContentType(.password)
-                        .font(.subheadline)
+                        .font(.system(size: 15))
                     }
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 8)
                     
                     HStack {
                         Text("模型")
+                            .font(.system(size: 15, weight: .medium))
                         Spacer()
                         Picker("", selection: $appState.modelName) {
                             ForEach(appState.aiProvider.models, id: \.self) { model in
@@ -55,100 +56,150 @@ struct SettingsView: View {
                     }
                     
                     Toggle(isOn: $appState.preferLocal) {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text("优先本地题库")
-                            Text("开启后先搜本地题库，未命中再调AI")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 15, weight: .medium))
+                            Text("开启后先搜本地，未命中再调AI")
+                                .font(.system(size: 13))
+                                .foregroundColor(DuoColors.gray)
                         }
                     }
                 } header: {
                     Text("AI 模型")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 } footer: {
                     Text("获取 API Key: \(appState.aiProvider.helpURL)")
+                        .font(.system(size: 12))
                 }
                 
                 // OCR Info
                 Section {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
-                        Text("Apple Vision (离线)")
-                            .font(.subheadline)
-                        Spacer()
-                        Text("默认")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(DuoColors.green)
+                                .frame(width: 32, height: 32)
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Apple Vision (离线)")
+                                .font(.system(size: 15, weight: .medium))
+                            Text("无需网络，支持中英文")
+                                .font(.system(size: 13))
+                                .foregroundColor(DuoColors.gray)
+                        }
                     }
+                    .padding(.vertical, 4)
                 } header: {
                     Text("OCR 引擎")
-                } footer: {
-                    Text("使用 Apple Vision 框架离线识别，支持中英文，无需网络")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 }
                 
                 // History
-                Section("搜索历史") {
+                Section {
                     if appState.searchHistory.isEmpty {
-                        Text("暂无记录")
-                            .foregroundColor(.secondary)
+                        HStack {
+                            Spacer()
+                            VStack(spacing: 8) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(DuoColors.gray)
+                                Text("暂无记录")
+                                    .font(.system(size: 15))
+                                    .foregroundColor(DuoColors.gray)
+                            }
+                            Spacer()
+                        }
+                        .padding(.vertical, 20)
                     } else {
                         ForEach(appState.searchHistory.prefix(20)) { record in
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text(record.question)
-                                    .font(.subheadline)
+                                    .font(.system(size: 14, weight: .medium))
                                     .lineLimit(1)
                                 HStack {
                                     Text(record.answer)
-                                        .font(.caption)
-                                        .foregroundColor(.blue)
+                                        .font(.system(size: 13))
+                                        .foregroundColor(DuoColors.blue)
                                         .lineLimit(1)
                                     Spacer()
+                                    Text(record.source)
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(
+                                            Capsule()
+                                                .fill(record.source == "local" ? DuoColors.green : DuoColors.blue)
+                                        )
                                     Text(record.timestamp, style: .relative)
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 11))
+                                        .foregroundColor(DuoColors.gray)
                                 }
                             }
-                            .padding(.vertical, 2)
+                            .padding(.vertical, 4)
                         }
                     }
+                } header: {
+                    Text("搜索历史")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 }
                 
                 // Clear
                 Section {
-                    Button("清除搜索历史") {
-                        appState.searchHistory.removeAll()
+                    Button(action: {
+                        withAnimation { appState.searchHistory.removeAll() }
+                    }) {
+                        HStack {
+                            Spacer()
+                            Text("清除搜索历史")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(DuoColors.red)
+                            Spacer()
+                        }
                     }
-                    .foregroundColor(.red)
                 }
                 
                 // About
-                Section("关于") {
+                Section {
                     HStack {
                         Text("版本")
+                            .font(.system(size: 15, weight: .medium))
                         Spacer()
                         Text("1.2.0")
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 15))
+                            .foregroundColor(DuoColors.gray)
                     }
                     HStack {
                         Text("题库数")
+                            .font(.system(size: 15, weight: .medium))
                         Spacer()
                         Text("\(appState.questionBanks.count)")
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("OCR")
-                        Spacer()
-                        Text("Apple Vision (离线)")
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 15))
+                            .foregroundColor(DuoColors.gray)
                     }
                     HStack {
                         Text("AI 服务商")
+                            .font(.system(size: 15, weight: .medium))
                         Spacer()
                         Text(appState.aiProvider.displayName)
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 15))
+                            .foregroundColor(DuoColors.gray)
                     }
+                } header: {
+                    Text("关于")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(DuoColors.gray)
                 }
             }
+            .listStyle(.insetGrouped)
+            .background(DuoColors.background)
             .navigationTitle("设置")
         }
     }

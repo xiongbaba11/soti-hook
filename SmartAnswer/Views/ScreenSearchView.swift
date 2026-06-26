@@ -9,137 +9,186 @@ struct ScreenSearchView: View {
     @State private var recognizedQuestions: [Question] = []
     @State private var currentIndex = 0
     @State private var isProcessing = false
+    @State private var showSuccess = false
+    @State private var pulseScale: CGFloat = 1.0
     
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     // Hero card
-                    VStack(spacing: 12) {
-                        Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
-                            .font(.system(size: 48))
-                            .foregroundColor(isRecording ? .red : .blue)
+                    VStack(spacing: 16) {
+                        // Animated recording indicator
+                        ZStack {
+                            if isRecording {
+                                // Pulse rings
+                                ForEach(0..<3) { i in
+                                    Circle()
+                                        .stroke(DuoColors.red.opacity(0.3 - Double(i) * 0.1), lineWidth: 2)
+                                        .frame(width: 60 + CGFloat(i) * 20, height: 60 + CGFloat(i) * 20)
+                                        .scaleEffect(pulseScale)
+                                        .animation(
+                                            .easeInOut(duration: 1.5)
+                                            .repeatForever(autoreverses: true)
+                                            .delay(Double(i) * 0.3),
+                                            value: pulseScale
+                                        )
+                                }
+                            }
+                            
+                            Image(systemName: isRecording ? "record.circle.fill" : "record.circle")
+                                .font(.system(size: 56))
+                                .foregroundColor(isRecording ? DuoColors.red : DuoColors.green)
+                                .bounceEffect(trigger: isRecording)
+                        }
+                        .onAppear {
+                            if isRecording {
+                                pulseScale = 1.2
+                            }
+                        }
+                        .onChange(of: isRecording) { newValue in
+                            pulseScale = newValue ? 1.2 : 1.0
+                        }
                         
                         Text(isRecording ? "录屏搜题中..." : "录屏搜题")
-                            .font(.title2)
-                            .fontWeight(.bold)
+                            .font(.system(size: 24, weight: .bold))
                         
-                        Text(isRecording ? "切换到答题App，切回本App自动识别" : "开启录屏后切换到答题App\n切回本App自动识别屏幕内容")
-                            .font(.subheadline)
+                        Text(isRecording ? "切换到答题App，切回自动识别" : "开启录屏后切换到答题App\n切回本App自动识别屏幕内容")
+                            .font(.system(size: 15))
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
                     }
-                    .padding(28)
+                    .padding(32)
                     .frame(maxWidth: .infinity)
                     .background(
-                        LinearGradient(
-                            colors: isRecording ? [.red.opacity(0.8), .orange.opacity(0.6)] : [.green, .blue],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(
+                                LinearGradient(
+                                    colors: isRecording ? [DuoColors.red, DuoColors.orange] : [DuoColors.green, DuoColors.blue],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                     )
-                    .cornerRadius(24)
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
                     
                     // Steps
                     if isRecording {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("使用方法")
-                                .font(.headline)
-                            StepRow(num: 1, text: "录屏已开启，切换到答题App")
-                            StepRow(num: 2, text: "在答题App中看到题目")
-                            StepRow(num: 3, text: "切回本App，自动识别屏幕")
-                            StepRow(num: 4, text: "下方显示识别结果")
+                        DuoCard {
+                            VStack(alignment: .leading, spacing: 16) {
+                                Text("使用方法")
+                                    .font(.system(size: 18, weight: .bold))
+                                
+                                StepRow(num: 1, text: "录屏已开启，切换到答题App", color: DuoColors.green)
+                                StepRow(num: 2, text: "在答题App中看到题目", color: DuoColors.blue)
+                                StepRow(num: 3, text: "切回本App，自动识别", color: DuoColors.orange)
+                                StepRow(num: 4, text: "下方显示答案", color: DuoColors.purple)
+                            }
                         }
-                        .padding(16)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(16)
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 20)
+                        .slideIn(show: isRecording, from: .top)
                     }
                     
-                    // Start/Stop button
+                    // Action button
                     Button(action: toggleRecording) {
-                        HStack {
-                            Image(systemName: isRecording ? "stop.circle.fill" : "play.circle.fill")
-                                .font(.title3)
+                        HStack(spacing: 10) {
+                            Image(systemName: isRecording ? "stop.fill" : "play.fill")
+                                .font(.system(size: 18, weight: .bold))
                             Text(isRecording ? "停止录屏" : "开启录屏搜题")
-                                .fontWeight(.semibold)
+                                .font(.system(size: 18, weight: .bold))
                         }
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(isRecording ? Color.red : Color.blue)
-                        .cornerRadius(16)
-                        .shadow(color: (isRecording ? Color.red : Color.blue).opacity(0.3), radius: 8, y: 4)
+                        .padding(.vertical, 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(isRecording ? DuoColors.red : DuoColors.green)
+                        )
+                        .shadow(color: (isRecording ? DuoColors.red : DuoColors.green).opacity(0.4), radius: 8, y: 4)
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 20)
+                    .scaleEffect(isRecording ? 1.0 : 1.0)
                     
-                    // Status
+                    // Status message
                     if showStatus && !statusMessage.isEmpty {
-                        HStack {
+                        HStack(spacing: 10) {
                             Image(systemName: statusMessage.contains("失败") || statusMessage.contains("错误") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                                .foregroundColor(statusMessage.contains("失败") || statusMessage.contains("错误") ? .orange : .green)
+                                .foregroundColor(statusMessage.contains("失败") || statusMessage.contains("错误") ? DuoColors.orange : DuoColors.green)
                             Text(statusMessage)
-                                .font(.subheadline)
+                                .font(.system(size: 14, weight: .medium))
                         }
-                        .padding(12)
+                        .padding(16)
                         .frame(maxWidth: .infinity)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
-                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(DuoColors.white)
+                        )
+                        .shadow(color: .black.opacity(0.06), radius: 6, y: 3)
+                        .padding(.horizontal, 20)
+                        .slideIn(show: showStatus)
                     }
                     
                     // Results
                     if !recognizedQuestions.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 12) {
                             HStack {
                                 Text("识别结果")
-                                    .font(.headline)
+                                    .font(.system(size: 18, weight: .bold))
                                 Spacer()
                                 Text("\(currentIndex + 1)/\(recognizedQuestions.count)")
-                                    .font(.subheadline)
-                                    .foregroundColor(.blue)
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(DuoColors.green)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(
+                                        Capsule()
+                                            .fill(DuoColors.green.opacity(0.1))
+                                    )
                             }
                             
                             TabView(selection: $currentIndex) {
                                 ForEach(Array(recognizedQuestions.enumerated()), id: \.offset) { index, question in
-                                    VStack(alignment: .leading, spacing: 10) {
-                                        HStack {
-                                            Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
-                                                .font(.caption2)
-                                            Text(question.source == "local" ? "本地题库" : question.source)
-                                                .font(.caption2)
-                                                .fontWeight(.semibold)
+                                    DuoCard {
+                                        VStack(alignment: .leading, spacing: 12) {
+                                            HStack {
+                                                Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
+                                                    .font(.system(size: 12))
+                                                Text(question.source == "local" ? "本地题库" : question.source)
+                                                    .font(.system(size: 12, weight: .semibold))
+                                            }
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                Capsule()
+                                                    .fill(question.source == "local" ? DuoColors.green : DuoColors.blue)
+                                            )
+                                            
+                                            Text(question.question)
+                                                .font(.system(size: 15))
+                                                .lineLimit(3)
+                                            
+                                            Text(question.answer)
+                                                .font(.system(size: 22, weight: .bold))
+                                                .foregroundColor(DuoColors.green)
                                         }
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(question.source == "local" ? Color.green : Color.blue)
-                                        .cornerRadius(6)
-                                        
-                                        Text(question.question)
-                                            .font(.subheadline)
-                                        
-                                        Text(question.answer)
-                                            .font(.title3)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.blue)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
                                     }
-                                    .padding(16)
-                                    .background(Color(.systemGray6))
-                                    .cornerRadius(16)
-                                    .padding(.horizontal, 4)
+                                    .padding(.horizontal, 20)
                                     .tag(index)
                                 }
                             }
                             .tabViewStyle(.page(indexDisplayMode: .automatic))
-                            .frame(height: 200)
+                            .frame(height: 220)
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, 20)
                     }
+                    
+                    Spacer(minLength: 20)
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 16)
             }
+            .background(DuoColors.background)
             .navigationTitle("录屏搜题")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -159,11 +208,11 @@ struct ScreenSearchView: View {
         let recorder = RPScreenRecorder.shared()
         
         if isRecording {
-            // Stop recording - DON'T present preview, just stop cleanly
             recorder.stopRecording { previewVC, error in
                 DispatchQueue.main.async {
-                    isRecording = false
-                    // Dismiss the previewVC immediately to prevent freeze
+                    withAnimation(.interpolatingSpring(stiffness: 200, damping: 15)) {
+                        isRecording = false
+                    }
                     if let error = error {
                         showStatusMsg("停止失败: \(error.localizedDescription)")
                     } else {
@@ -182,8 +231,10 @@ struct ScreenSearchView: View {
                     if let error = error {
                         showStatusMsg("启动失败: \(error.localizedDescription)")
                     } else {
-                        isRecording = true
-                        showStatusMsg("录屏已开启，切换到答题App后切回本App查看结果")
+                        withAnimation(.interpolatingSpring(stiffness: 200, damping: 15)) {
+                            isRecording = true
+                        }
+                        showStatusMsg("录屏已开启，切换到答题App")
                     }
                 }
             }
@@ -223,11 +274,18 @@ struct ScreenSearchView: View {
                 isProcessing = false
                 if case .found(let q) = result {
                     if recognizedQuestions.first?.question != q.question {
-                        recognizedQuestions.insert(q, at: 0)
-                        if recognizedQuestions.count > 5 {
-                            recognizedQuestions.removeLast()
+                        withAnimation(.interpolatingSpring(stiffness: 200, damping: 15)) {
+                            recognizedQuestions.insert(q, at: 0)
+                            if recognizedQuestions.count > 5 {
+                                recognizedQuestions.removeLast()
+                            }
+                            currentIndex = 0
+                            showSuccess = true
                         }
-                        currentIndex = 0
+                        
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            withAnimation { showSuccess = false }
+                        }
                     }
                 }
             }
@@ -236,7 +294,7 @@ struct ScreenSearchView: View {
     
     private func showStatusMsg(_ msg: String) {
         statusMessage = msg
-        withAnimation { showStatus = true }
+        withAnimation(.interpolatingSpring(stiffness: 200, damping: 15)) { showStatus = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
             withAnimation { showStatus = false }
         }
@@ -246,17 +304,20 @@ struct ScreenSearchView: View {
 struct StepRow: View {
     let num: Int
     let text: String
+    let color: Color
+    
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             Text("\(num)")
-                .font(.caption)
-                .fontWeight(.bold)
+                .font(.system(size: 14, weight: .bold))
                 .foregroundColor(.white)
-                .frame(width: 24, height: 24)
-                .background(Color.blue)
-                .cornerRadius(12)
+                .frame(width: 28, height: 28)
+                .background(
+                    Circle()
+                        .fill(color)
+                )
             Text(text)
-                .font(.subheadline)
+                .font(.system(size: 15))
         }
     }
 }
