@@ -13,10 +13,8 @@ struct CameraSearchView: View {
     @State private var scale: CGFloat = 1.0
     @State private var autoRecognize = true
     @State private var lastRecognizeTime: Date = Date.distantPast
-    @State private var isStable = false
-    @State private var stabilityTimer: Timer?
     
-    private let recognizeInterval: TimeInterval = 2.0 // Auto-recognize every 2s when stable
+    private let recognizeInterval: TimeInterval = 2.5
     
     var body: some View {
         VStack(spacing: 0) {
@@ -134,7 +132,7 @@ struct CameraSearchView: View {
                                     HStack {
                                         Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
                                             .font(.caption2)
-                                        Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
+                                        Text(question.source == "local" ? "本地题库" : question.source)
                                             .font(.caption2)
                                             .fontWeight(.semibold)
                                     }
@@ -228,7 +226,6 @@ struct CameraSearchView: View {
     }
     
     private func recognizeAndSearch(image: UIImage) async {
-        // Throttle: don't recognize too frequently
         let now = Date()
         guard now.timeIntervalSince(lastRecognizeTime) > recognizeInterval else { return }
         
@@ -245,8 +242,9 @@ struct CameraSearchView: View {
         
         let searchResult = await SearchService.shared.search(
             query: text,
-            token: appState.token,
+            token: appState.activeToken,
             model: appState.modelName,
+            provider: appState.aiProvider,
             preferLocal: appState.preferLocal
         )
         
@@ -254,7 +252,6 @@ struct CameraSearchView: View {
             isLoading = false
             
             if case .found(let q) = searchResult {
-                // Avoid duplicates
                 if recognizedQuestions.first?.question != q.question {
                     recognizedQuestions.insert(q, at: 0)
                     if recognizedQuestions.count > 5 {
@@ -270,7 +267,7 @@ struct CameraSearchView: View {
     }
 }
 
-// MARK: - Auto Capture Preview (continuously captures frames for auto-recognition)
+// MARK: - Auto Capture Preview
 struct AutoCapturePreview: UIViewRepresentable {
     let session: AVCaptureSession
     @Binding var scale: CGFloat
@@ -318,7 +315,7 @@ struct AutoCapturePreview: UIViewRepresentable {
         
         func startAutoCapture() {
             captureTimer?.invalidate()
-            captureTimer = Timer.scheduledTimer(withTimeInterval: 2.5, repeats: true) { [weak self] _ in
+            captureTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
                 guard let self = self, self.autoRecognize else { return }
                 self.captureCurrentFrame()
             }
@@ -326,7 +323,7 @@ struct AutoCapturePreview: UIViewRepresentable {
         
         private func captureCurrentFrame() {
             let now = Date()
-            guard now.timeIntervalSince(lastCaptureTime) > 2.0 else { return }
+            guard now.timeIntervalSince(lastCaptureTime) > 2.5 else { return }
             lastCaptureTime = now
             
             guard let previewLayer = previewLayer else { return }
@@ -336,7 +333,6 @@ struct AutoCapturePreview: UIViewRepresentable {
                 layer.render(in: ctx.cgContext)
             }
             
-            // Crop to the viewfinder area (center portion)
             let cropRect = CGRect(
                 x: image.size.width * 0.05,
                 y: image.size.height * 0.2,

@@ -130,7 +130,6 @@ class QuestionBankManager {
         if ext == "json" {
             return parseJSONFile(url: url)
         }
-        // Default: try text file (supports JSON-per-line, q/a/ans format, and plain text)
         return parseTextFile(url: url)
     }
     
@@ -143,7 +142,7 @@ class QuestionBankManager {
         for line in lines {
             guard let data = line.data(using: .utf8) else { continue }
             
-            // Try q/a/ans format (小包搜题 format)
+            // Try q/a/ans format
             if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let q = obj["q"] as? String, !q.isEmpty {
                 let options = obj["a"] as? [String]
@@ -175,7 +174,6 @@ class QuestionBankManager {
     private func parseJSONFile(url: URL) -> [Question] {
         guard let data = try? Data(contentsOf: url) else { return [] }
         
-        // Try as array of q/a/ans objects
         if let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
             return arr.compactMap { obj -> Question? in
                 guard let q = obj["q"] as? String, !q.isEmpty else { return nil }
@@ -186,7 +184,6 @@ class QuestionBankManager {
             }
         }
         
-        // Try as array of Question objects
         if let arr = try? JSONDecoder().decode([Question].self, from: data) {
             return arr.map { Question(question: $0.question, answer: $0.answer, options: $0.options, source: "local") }
         }
@@ -194,7 +191,6 @@ class QuestionBankManager {
         return []
     }
     
-    /// Resolve answer key (A/B/C/D) to actual answer text
     private func resolveAnswer(ansKey: String, options: [String]?) -> String {
         guard let options = options, !ansKey.isEmpty else { return ansKey }
         
@@ -222,7 +218,6 @@ class QuestionBankManager {
         banks.filter { $0.enabled }.map { $0.name }
     }
     
-    /// Load bundled example question bank from app bundle
     func loadBundledBank() {
         guard let url = Bundle.main.url(forResource: "xiaobao", withExtension: "txt") else {
             print("Bundled bank not found")

@@ -2,21 +2,44 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var appState: AppState
-    @State private var baiduApiKey = UserDefaults.standard.string(forKey: "baiduApiKey") ?? "lj7nn2nsItgfQPfPcME1xg4K"
-    @State private var baiduSecretKey = UserDefaults.standard.string(forKey: "baiduSecretKey") ?? "wxvEhZF5NkC3YHjoZz0OckbIZG4zpwdR"
+    @State private var baiduApiKey = UserDefaults.standard.string(forKey: "baiduApiKey") ?? ""
+    @State private var baiduSecretKey = UserDefaults.standard.string(forKey: "baiduSecretKey") ?? ""
     
     var body: some View {
         NavigationView {
             List {
-                // DeepSeek API Config
+                // AI Provider Selection
                 Section {
+                    Picker("AI 服务商", selection: $appState.aiProvider) {
+                        ForEach(AIProvider.allCases) { provider in
+                            Text(provider.displayName).tag(provider)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: appState.aiProvider) { newProvider in
+                        appState.modelName = newProvider.defaultModel
+                    }
+                    
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("DeepSeek API Key")
+                        Text("\(appState.aiProvider.displayName) API Key")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        SecureField("sk-...", text: $appState.token)
-                            .textContentType(.password)
-                            .font(.subheadline)
+                        SecureField(appState.aiProvider.keyPlaceholder, text: Binding(
+                            get: {
+                                switch appState.aiProvider {
+                                case .deepseek: return appState.token
+                                case .mimo: return appState.mimoToken
+                                }
+                            },
+                            set: { newValue in
+                                switch appState.aiProvider {
+                                case .deepseek: appState.token = newValue
+                                case .mimo: appState.mimoToken = newValue
+                                }
+                            }
+                        ))
+                        .textContentType(.password)
+                        .font(.subheadline)
                     }
                     .padding(.vertical, 4)
                     
@@ -24,8 +47,9 @@ struct SettingsView: View {
                         Text("模型")
                         Spacer()
                         Picker("", selection: $appState.modelName) {
-                            Text("deepseek-chat").tag("deepseek-chat")
-                            Text("deepseek-reasoner").tag("deepseek-reasoner")
+                            ForEach(appState.aiProvider.models, id: \.self) { model in
+                                Text(model).tag(model)
+                            }
                         }
                         .pickerStyle(.menu)
                     }
@@ -41,48 +65,25 @@ struct SettingsView: View {
                 } header: {
                     Text("AI 模型")
                 } footer: {
-                    Text("获取 API Key: platform.deepseek.com")
+                    Text("获取 API Key: \(appState.aiProvider.helpURL)")
                 }
                 
-                // Baidu OCR Config
+                // OCR Info
                 Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("API Key")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        TextField("百度OCR API Key", text: $baiduApiKey)
-                            .textContentType(.username)
-                            .font(.subheadline)
-                            .onChange(of: baiduApiKey) { val in
-                                UserDefaults.standard.set(val, forKey: "baiduApiKey")
-                            }
-                    }
-                    .padding(.vertical, 4)
-                    
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Secret Key")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        SecureField("百度OCR Secret Key", text: $baiduSecretKey)
-                            .textContentType(.password)
-                            .font(.subheadline)
-                            .onChange(of: baiduSecretKey) { val in
-                                UserDefaults.standard.set(val, forKey: "baiduSecretKey")
-                            }
-                    }
-                    .padding(.vertical, 4)
-                    
                     HStack {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.green)
-                        Text("已配置（百度OCR）")
+                        Text("Apple Vision (离线)")
+                            .font(.subheadline)
+                        Spacer()
+                        Text("默认")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                 } header: {
-                    Text("百度OCR")
+                    Text("OCR 引擎")
                 } footer: {
-                    Text("每月免费1000次，中文识别准确率高")
+                    Text("使用 Apple Vision 框架离线识别，支持中英文，无需网络")
                 }
                 
                 // History
@@ -125,7 +126,7 @@ struct SettingsView: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.1.0")
+                        Text("1.2.0")
                             .foregroundColor(.secondary)
                     }
                     HStack {
@@ -137,7 +138,13 @@ struct SettingsView: View {
                     HStack {
                         Text("OCR")
                         Spacer()
-                        Text("百度OCR + Apple Vision")
+                        Text("Apple Vision (离线)")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Text("AI 服务商")
+                        Spacer()
+                        Text(appState.aiProvider.displayName)
                             .foregroundColor(.secondary)
                     }
                 }

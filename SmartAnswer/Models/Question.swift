@@ -5,7 +5,7 @@ struct Question: Identifiable, Codable {
     let question: String
     let answer: String
     let options: [String]?
-    let source: String // "local" or "deepseek"
+    let source: String // "local" or provider name like "DeepSeek", "MiMo"
     
     enum CodingKeys: String, CodingKey {
         case question, answer, options, source

@@ -7,29 +7,21 @@ class BaiduOCRService {
     private var accessToken: String?
     private var tokenExpiry: Date?
     
-    // MARK: - Public
-    
-    func recognizeText(from image: UIImage, apiKey: String, secretKey: String) async -> String? {
+    func recognizeText(from image: UIImage, apiKey: *** secretKey: String) async -> String? {
         guard let cgImage = image.cgImage else { return nil }
         
-        // Get access token
-        guard let token = await getAccessToken(apiKey: apiKey, secretKey: secretKey) else {
+        guard let token = await getAccessToken(apiKey: *** secretKey: secretKey) else {
             print("BaiduOCR: Failed to get access token")
             return nil
         }
         
-        // Compress image to base64
         guard let imageData = image.jpegData(compressionQuality: 0.8) else { return nil }
         let base64Image = imageData.base64EncodedString()
         
-        // Call OCR API
         return await callOCR(token: token, base64Image: base64Image)
     }
     
-    // MARK: - Get Access Token
-    
-    private func getAccessToken(apiKey: String, secretKey: String) async -> String? {
-        // Check cached token
+    private func getAccessToken(apiKey: *** secretKey: String) async -> String? {
         if let token = accessToken, let expiry = tokenExpiry, Date() < expiry {
             return token
         }
@@ -64,8 +56,6 @@ class BaiduOCRService {
         
         return nil
     }
-    
-    // MARK: - Call OCR
     
     private func callOCR(token: String, base64Image: String) async -> String? {
         let urlStr = "https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=\(token)"

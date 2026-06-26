@@ -8,6 +8,7 @@ struct ScreenSearchView: View {
     @State private var showStatus = false
     @State private var recognizedQuestions: [Question] = []
     @State private var currentIndex = 0
+    @State private var isProcessing = false
     
     var body: some View {
         NavigationView {
@@ -76,8 +77,8 @@ struct ScreenSearchView: View {
                     // Status
                     if showStatus && !statusMessage.isEmpty {
                         HStack {
-                            Image(systemName: statusMessage.contains("失败") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                                .foregroundColor(statusMessage.contains("失败") ? .orange : .green)
+                            Image(systemName: statusMessage.contains("失败") || statusMessage.contains("错误") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                                .foregroundColor(statusMessage.contains("失败") || statusMessage.contains("错误") ? .orange : .green)
                             Text(statusMessage)
                                 .font(.subheadline)
                         }
@@ -106,7 +107,7 @@ struct ScreenSearchView: View {
                                         HStack {
                                             Image(systemName: question.source == "local" ? "books.vertical.fill" : "brain")
                                                 .font(.caption2)
-                                            Text(question.source == "local" ? "本地题库" : "DeepSeek AI")
+                                            Text(question.source == "local" ? "本地题库" : question.source)
                                                 .font(.caption2)
                                                 .fontWeight(.semibold)
                                         }
@@ -143,7 +144,6 @@ struct ScreenSearchView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
-            // Auto-capture when app comes back to foreground
             NotificationCenter.default.addObserver(
                 forName: UIApplication.willEnterForegroundNotification,
                 object: nil, queue: .main
@@ -156,25 +156,28 @@ struct ScreenSearchView: View {
     }
     
     private func toggleRecording() {
+        let recorder = RPScreenRecorder.shared()
+        
         if isRecording {
-            RPScreenRecorder.shared().stopRecording { previewVC, error in
+            // Stop recording - DON'T present preview, just stop cleanly
+            recorder.stopRecording { previewVC, error in
                 DispatchQueue.main.async {
                     isRecording = false
+                    // Dismiss the previewVC immediately to prevent freeze
                     if let error = error {
                         showStatusMsg("停止失败: \(error.localizedDescription)")
-                        return
+                    } else {
+                        showStatusMsg("录屏已停止")
                     }
-                    if let previewVC = previewVC {
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let rootVC = windowScene.windows.first?.rootViewController {
-                            rootVC.present(previewVC, animated: true)
-                        }
-                    }
-                    showStatusMsg("录屏已停止")
                 }
             }
         } else {
-            RPScreenRecorder.shared().startRecording { error in
+            guard recorder.isAvailable else {
+                showStatusMsg("设备不支持录屏")
+                return
+            }
+            
+            recorder.startRecording { error in
                 DispatchQueue.main.async {
                     if let error = error {
                         showStatusMsg("启动失败: \(error.localizedDescription)")
@@ -188,8 +191,14 @@ struct ScreenSearchView: View {
     }
     
     private func captureAndRecognize() {
+        guard !isProcessing else { return }
+        isProcessing = true
+        
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first else { return }
+              let window = windowScene.windows.first else {
+            isProcessing = false
+            return
+        }
         
         let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
         let screenshot = renderer.image { ctx in
@@ -197,16 +206,21 @@ struct ScreenSearchView: View {
         }
         
         Task {
-            guard let text = await OCRService.shared.recognizeText(from: screenshot) else { return }
+            guard let text = await OCRService.shared.recognizeText(from: screenshot) else {
+                await MainActor.run { isProcessing = false }
+                return
+            }
             
             let result = await SearchService.shared.search(
                 query: text,
-                token: appState.token,
+                token: appState.activeToken,
                 model: appState.modelName,
+                provider: appState.aiProvider,
                 preferLocal: appState.preferLocal
             )
             
             await MainActor.run {
+                isProcessing = false
                 if case .found(let q) = result {
                     if recognizedQuestions.first?.question != q.question {
                         recognizedQuestions.insert(q, at: 0)

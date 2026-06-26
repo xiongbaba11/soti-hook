@@ -3,14 +3,15 @@ import Foundation
 class DeepSeekService {
     static let shared = DeepSeekService()
     
-    private let url = URL(string: "https://api.deepseek.com/chat/completions")!
-    
-    func ask(question: String, token: String, model: String) async throws -> String {
+    func ask(question: String, token: String, model: String, provider: AIProvider) async throws -> String {
+        let urlStr = provider.baseURL
+        guard let url = URL(string: urlStr) else { throw URLError(.badURL) }
+        
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 15
+        request.timeoutInterval = 20
         
         let body = DeepSeekRequest(
             model: model,
