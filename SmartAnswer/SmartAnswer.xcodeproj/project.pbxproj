@@ -15,7 +15,6 @@
 		36CC6BA170A94FE9A4876A29 /* AnswerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9851A741F4684EA78C1EF138 /* AnswerCard.swift */; };
 		A18F5DD61C994A5B92F844D6 /* DeepSeekService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C8AB1FDBFCB48988CC5A007 /* DeepSeekService.swift */; };
 		85B2BC95303E4D85BAABF69F /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE57CF898A5149DB93DAD7E0 /* OCRService.swift */; };
-		A3B7C8D9E0F1234567890ABC /* BaiduOCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4E5F6A7B8C9012345678DEF /* BaiduOCRService.swift */; };
 		8DB45E8D1AF44D51A050DE5E /* CameraService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11DFF0F92C04439788FB5D8F /* CameraService.swift */; };
 		414AE791B61146BF8B9DD6B7 /* QuestionBankManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E761DAE45144DC1A287C7F3 /* QuestionBankManager.swift */; };
 		6B2FBE8331A040888BF08C64 /* SearchService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7969035E571E48B0B52CDA45 /* SearchService.swift */; };
@@ -36,7 +35,6 @@
 		9851A741F4684EA78C1EF138 /* AnswerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnswerCard.swift; sourceTree = "<group>"; };
 		8C8AB1FDBFCB48988CC5A007 /* DeepSeekService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepSeekService.swift; sourceTree = "<group>"; };
 		FE57CF898A5149DB93DAD7E0 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
-		D4E5F6A7B8C9012345678DEF /* BaiduOCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaiduOCRService.swift; sourceTree = "<group>"; };
 		11DFF0F92C04439788FB5D8F /* CameraService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraService.swift; sourceTree = "<group>"; };
 		6E761DAE45144DC1A287C7F3 /* QuestionBankManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuestionBankManager.swift; sourceTree = "<group>"; };
 		7969035E571E48B0B52CDA45 /* SearchService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchService.swift; sourceTree = "<group>"; };
@@ -90,7 +88,6 @@
 			children = (
 				8C8AB1FDBFCB48988CC5A007 /* DeepSeekService.swift */,
 				FE57CF898A5149DB93DAD7E0 /* OCRService.swift */,
-				D4E5F6A7B8C9012345678DEF /* BaiduOCRService.swift */,
 				11DFF0F92C04439788FB5D8F /* CameraService.swift */,
 				6E761DAE45144DC1A287C7F3 /* QuestionBankManager.swift */,
 				7969035E571E48B0B52CDA45 /* SearchService.swift */,
@@ -199,7 +196,6 @@
 				36CC6BA170A94FE9A4876A29 /* AnswerCard.swift in Sources */,
 				A18F5DD61C994A5B92F844D6 /* DeepSeekService.swift in Sources */,
 				85B2BC95303E4D85BAABF69F /* OCRService.swift in Sources */,
-				A3B7C8D9E0F1234567890ABC /* BaiduOCRService.swift in Sources */,
 				8DB45E8D1AF44D51A050DE5E /* CameraService.swift in Sources */,
 				414AE791B61146BF8B9DD6B7 /* QuestionBankManager.swift in Sources */,
 				6B2FBE8331A040888BF08C64 /* SearchService.swift in Sources */,
