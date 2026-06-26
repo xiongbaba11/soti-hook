@@ -8,9 +8,6 @@ struct ScreenSearchView: View {
     @State private var showStatus = false
     @State private var recognizedQuestions: [Question] = []
     @State private var currentIndex = 0
-    @State private var pollTimer: Timer?
-    
-    private let sharedDefaults = UserDefaults(suiteName: "group.com.smartanswer.screen")
     
     var body: some View {
         NavigationView {
@@ -26,7 +23,7 @@ struct ScreenSearchView: View {
                             .font(.title2)
                             .fontWeight(.bold)
                         
-                        Text(isRecording ? "切换到答题App，悬浮窗会自动识别" : "开启录屏后切换到答题App\n悬浮窗自动识别题目")
+                        Text(isRecording ? "切换到答题App，切回本App自动识别" : "开启录屏后切换到答题App\n切回本App自动识别屏幕内容")
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.center)
@@ -43,38 +40,53 @@ struct ScreenSearchView: View {
                     .cornerRadius(24)
                     .padding(.horizontal, 16)
                     
-                    // Broadcast picker button (system UI for screen recording)
-                    VStack(spacing: 12) {
-                        Text("点击下方按钮开启录屏")
-                            .font(.headline)
-                        
-                        // System broadcast picker
-                        BroadcastPickerView()
-                            .frame(width: 80, height: 80)
-                        
-                        Text("选择「智能答题」开始录屏")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    // Steps
+                    if isRecording {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("使用方法")
+                                .font(.headline)
+                            StepRow(num: 1, text: "录屏已开启，切换到答题App")
+                            StepRow(num: 2, text: "在答题App中看到题目")
+                            StepRow(num: 3, text: "切回本App，自动识别屏幕")
+                            StepRow(num: 4, text: "下方显示识别结果")
+                        }
+                        .padding(16)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(16)
+                        .padding(.horizontal, 16)
                     }
-                    .padding(16)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(16)
+                    
+                    // Start/Stop button
+                    Button(action: toggleRecording) {
+                        HStack {
+                            Image(systemName: isRecording ? "stop.circle.fill" : "play.circle.fill")
+                                .font(.title3)
+                            Text(isRecording ? "停止录屏" : "开启录屏搜题")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(isRecording ? Color.red : Color.blue)
+                        .cornerRadius(16)
+                        .shadow(color: (isRecording ? Color.red : Color.blue).opacity(0.3), radius: 8, y: 4)
+                    }
                     .padding(.horizontal, 16)
                     
-                    // How it works
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("使用步骤")
-                            .font(.headline)
-                        
-                        StepRow(num: 1, text: "点击上方按钮，选择「智能答题」开始录屏")
-                        StepRow(num: 2, text: "切换到答题App，悬浮窗自动显示")
-                        StepRow(num: 3, text: "悬浮窗实时识别屏幕题目")
-                        StepRow(num: 4, text: "识别结果直接显示在悬浮窗上")
+                    // Status
+                    if showStatus && !statusMessage.isEmpty {
+                        HStack {
+                            Image(systemName: statusMessage.contains("失败") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                                .foregroundColor(statusMessage.contains("失败") ? .orange : .green)
+                            Text(statusMessage)
+                                .font(.subheadline)
+                        }
+                        .padding(12)
+                        .frame(maxWidth: .infinity)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .padding(.horizontal, 16)
                     }
-                    .padding(16)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(16)
-                    .padding(.horizontal, 16)
                     
                     // Results
                     if !recognizedQuestions.isEmpty {
@@ -131,40 +143,61 @@ struct ScreenSearchView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
-            checkBroadcastStatus()
-            startPolling()
-        }
-        .onDisappear {
-            stopPolling()
-        }
-    }
-    
-    private func checkBroadcastStatus() {
-        isRecording = sharedDefaults?.bool(forKey: "isBroadcasting") ?? false
-    }
-    
-    private func startPolling() {
-        pollTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { _ in
-            checkBroadcastStatus()
-            if isRecording {
-                processFrameIfAvailable()
+            // Auto-capture when app comes back to foreground
+            NotificationCenter.default.addObserver(
+                forName: UIApplication.willEnterForegroundNotification,
+                object: nil, queue: .main
+            ) { _ in
+                if isRecording {
+                    captureAndRecognize()
+                }
             }
         }
     }
     
-    private func stopPolling() {
-        pollTimer?.invalidate()
+    private func toggleRecording() {
+        if isRecording {
+            RPScreenRecorder.shared().stopRecording { previewVC, error in
+                DispatchQueue.main.async {
+                    isRecording = false
+                    if let error = error {
+                        showStatusMsg("停止失败: \(error.localizedDescription)")
+                        return
+                    }
+                    if let previewVC = previewVC {
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let rootVC = windowScene.windows.first?.rootViewController {
+                            rootVC.present(previewVC, animated: true)
+                        }
+                    }
+                    showStatusMsg("录屏已停止")
+                }
+            }
+        } else {
+            RPScreenRecorder.shared().startRecording { error in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        showStatusMsg("启动失败: \(error.localizedDescription)")
+                    } else {
+                        isRecording = true
+                        showStatusMsg("录屏已开启，切换到答题App后切回本App查看结果")
+                    }
+                }
+            }
+        }
     }
     
-    private func processFrameIfAvailable() {
-        guard let sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.smartanswer.screen") else { return }
+    private func captureAndRecognize() {
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else { return }
         
-        let frameURL = sharedContainer.appendingPathComponent("current_frame.jpg")
-        guard let data = try? Data(contentsOf: frameURL),
-              let image = UIImage(data: data) else { return }
+        let renderer = UIGraphicsImageRenderer(bounds: window.bounds)
+        let screenshot = renderer.image { ctx in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
         
         Task {
-            guard let text = await OCRService.shared.recognizeText(from: image) else { return }
+            guard let text = await OCRService.shared.recognizeText(from: screenshot) else { return }
             
             let result = await SearchService.shared.search(
                 query: text,
@@ -186,24 +219,19 @@ struct ScreenSearchView: View {
             }
         }
     }
-}
-
-// MARK: - Broadcast Picker (wraps RPSystemBroadcastPickerView)
-struct BroadcastPickerView: UIViewRepresentable {
-    func makeUIView(context: Context) -> RPSystemBroadcastPickerView {
-        let picker = RPSystemBroadcastPickerView()
-        picker.preferredExtension = "com.smartanswer.screen"
-        picker.showsMicrophoneButton = false
-        return picker
-    }
     
-    func updateUIView(_ uiView: RPSystemBroadcastPickerView, context: Context) {}
+    private func showStatusMsg(_ msg: String) {
+        statusMessage = msg
+        withAnimation { showStatus = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4) {
+            withAnimation { showStatus = false }
+        }
+    }
 }
 
 struct StepRow: View {
     let num: Int
     let text: String
-    
     var body: some View {
         HStack(spacing: 12) {
             Text("\(num)")
